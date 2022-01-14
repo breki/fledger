@@ -2,6 +2,8 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "fledger", "fledger\fledger.fsproj", "{B1C99B62-985F-4E5C-BDD7-6767FB250BEC}"
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "fledger.Tests", "fledger.Tests\fledger.Tests.fsproj", "{D52BB5D9-204D-4C12-9219-F1835A59E5E9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -12,5 +14,9 @@ Global
 		{B1C99B62-985F-4E5C-BDD7-6767FB250BEC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B1C99B62-985F-4E5C-BDD7-6767FB250BEC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B1C99B62-985F-4E5C-BDD7-6767FB250BEC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D52BB5D9-204D-4C12-9219-F1835A59E5E9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D52BB5D9-204D-4C12-9219-F1835A59E5E9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D52BB5D9-204D-4C12-9219-F1835A59E5E9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D52BB5D9-204D-4C12-9219-F1835A59E5E9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
