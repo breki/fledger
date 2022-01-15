@@ -29,7 +29,12 @@ type Transaction =
       Postings: PostingLine list }
 
 module JournalParsing =
-    let pYear = pint32 .>> pstring "/"
+    let spacesTabs: Parser<string, unit> = manyChars (pchar ' ' <|> pchar '\t')
+
+    let spacesTabs1: Parser<string, unit> =
+        many1Chars (pchar ' ' <|> pchar '\t')
+
+    let pYear = pint32 .>> pstring "/" <?> "year"
     let pMonth = pint32 .>> pstring "/"
     let pDay = pint32
 
@@ -43,14 +48,14 @@ module JournalParsing =
     let pPendingTxDesc: Parser<TransactionState * string, unit> =
         pipe3
             (pstring "!")
-            spaces
+            spacesTabs
             (restOfLine true)
             (fun _ _ desc -> (TransactionState.Pending, desc))
 
     let pClearedTxDesc =
         pipe3
             (pstring "*")
-            spaces
+            spacesTabs
             (restOfLine true)
             (fun _ _ desc -> (TransactionState.Cleared, desc))
 
@@ -66,7 +71,7 @@ module JournalParsing =
     let pTxFirstLine =
         pipe3
             pDate
-            spaces1
+            spacesTabs1
             pTxStateAndDescription
             (fun date _ (state, description) ->
                 { Date = date
@@ -80,26 +85,46 @@ module JournalParsing =
                  pchar '-'
                  pchar '_'
                  pchar ' ' ]
+        <?> "account name character "
 
-    let pAccount: Parser<string, unit> = manyChars pAccountChar
+    let pAmountSeparator =
+        (pstring " " .>> (pstring " ") |> attempt
+         <?> "amount separator")
 
-    let spaces2 = pchar ' ' .>> spaces1
-    let pAccountRef = spaces1 >>. pAccount .>> spaces2
+    let pAccount: Parser<string, unit> =
+        many1CharsTill pAccountChar pAmountSeparator
+        <?> "account name"
 
-    let pAmount =
+    let pAccountRef =
+        spacesTabs1 >>. pAccount .>> spacesTabs
+        <?> "account reference"
+
+    let pAmountValue =
         numberLiteral NumberLiteralOptions.DefaultFloat "amount"
         |>> (fun num -> Decimal.Parse(num.String, CultureInfo.InvariantCulture))
+        <?> "amount value"
+
+    let pCurrencyChar = letter
+
+    let pCurrency: Parser<string, unit> =
+        many1Chars pCurrencyChar <?> "currency"
+
+    let pAmount: Parser<decimal * string option, unit> =
+        pAmountValue
+        .>>. ((spacesTabs1 >>. pCurrency .>> (restOfLine true)
+               |>> Some)
+              <|> ((restOfLine true) >>% None))
+        <?> "amount"
+
 
     let pPostingLine =
-        pipe3
+        pipe2
             pAccountRef
             pAmount
-            (restOfLine true)
-            (fun account amount _ ->
+            (fun account (amount, currency) ->
                 { Account = account
                   Amount = amount
-                  Currency = None })
-
+                  Currency = currency })
 
     let pPostingLines: Parser<PostingLine list, unit> = many pPostingLine
 
@@ -111,20 +136,33 @@ module Tests =
     let sample =
         @"2022/01/06 *s.p. prispevki
       expenses:Business:Service charges    0.39 EUR
-      expenses:Business:Employment Costs    4.25 EUR
+      expenses:Business:Employment Costs    4.25
       assets:current assets:Sparkasse    -4.64 EUR
-    "
+"
 
     type LedgerParsingTests(output: ITestOutputHelper) =
         [<Fact>]
         member this.icebreaker() =
+            let expectedTransaction =
+                { Info =
+                      { Date = DateTime(2022, 1, 6)
+                        State = TransactionState.Cleared
+                        Description = "s.p. prispevki" }
+                  Postings =
+                      [ { Account = "expenses:Business:Service charges"
+                          Amount = 0.39m
+                          Currency = Some "EUR" }
+                        { Account = "expenses:Business:Employment Costs"
+                          Amount = 4.25m
+                          Currency = None }
+                        { Account = "assets:current assets:Sparkasse"
+                          Amount = -4.64m
+                          Currency = Some "EUR" } ] }
+
             let result = run JournalParsing.pTx sample
 
             match result with
-            | Success (tx, _, _) ->
-                test <@ tx.Info.Date = DateTime(2022, 1, 6) @>
-                test <@ tx.Info.State = TransactionState.Cleared @>
-                test <@ tx.Info.Description = "s.p. prispevki" @>
+            | Success (tx, _, _) -> test <@ tx = expectedTransaction @>
             | Failure (err, _, _) ->
                 output.WriteLine $"%s{err}\n"
                 test <@ false @>
