@@ -25,46 +25,64 @@ type Transaction =
       State: TransactionState
       Description: string }
 
-type LedgerParsingTests(output: ITestOutputHelper) =
-    [<Fact>]
-    member this.icebreaker() =
-        let pyear = pint32 .>> pstring "/"
-        let pmonth = pint32 .>> pstring "/"
-        let pday = pint32
+module JournalParsing =
+    let pYear = pint32 .>> pstring "/"
+    let pMonth = pint32 .>> pstring "/"
+    let pDay = pint32
 
-        let pdate =
-            pipe3
-                pyear
-                pmonth
-                pday
-                (fun year month day -> DateTime(year, month, day))
+    let pDate =
+        pipe3
+            pYear
+            pMonth
+            pDay
+            (fun year month day -> DateTime(year, month, day))
 
-        let pTxFirstLine =
-            pipe3
-                pdate
-                spaces1
-                (restOfLine true)
-                (fun date _ description ->
-                    let (state, description) =
-                        match description.[0] with
-                        | '!' ->
-                            (TransactionState.Pending, description.Substring(1))
-                        | '*' ->
-                            (TransactionState.Cleared, description.Substring(1))
-                        | _ -> (TransactionState.Unmarked, description)
+    let pPendingTxDesc: Parser<(TransactionState * string), unit> =
+        pipe3
+            (pstring "!")
+            spaces
+            (restOfLine true)
+            (fun _ _ desc -> (TransactionState.Pending, desc))
 
-                    { Date = date
-                      State = state
-                      Description = description.Trim() })
+    let pClearedTxDesc =
+        pipe3
+            (pstring "*")
+            spaces
+            (restOfLine true)
+            (fun _ _ desc -> (TransactionState.Cleared, desc))
 
-        let pTx = pTxFirstLine
-        let result = run pTx sample
+    let pUnmarkedTxDesc =
+        (restOfLine true)
+        |>> (fun desc -> (TransactionState.Unmarked, desc))
 
-        match result with
-        | Success (tx, _, _) ->
-            test <@ tx.Date = DateTime(2022, 1, 6) @>
-            test <@ tx.State = TransactionState.Cleared @>
-            test <@ tx.Description = "s.p. prispevki" @>
-        | Failure (err, _, _) ->
-            output.WriteLine $"%s{err}\n"
-            test <@ false @>
+    let pTxStateAndDescription =
+        pPendingTxDesc
+        <|> pClearedTxDesc
+        <|> pUnmarkedTxDesc
+
+    let pTxFirstLine =
+        pipe3
+            pDate
+            spaces1
+            pTxStateAndDescription
+            (fun date _ (state, description) ->
+                { Date = date
+                  State = state
+                  Description = description.Trim() })
+
+    let pTx = pTxFirstLine
+
+module Tests =
+    type LedgerParsingTests(output: ITestOutputHelper) =
+        [<Fact>]
+        member this.icebreaker() =
+            let result = run JournalParsing.pTx sample
+
+            match result with
+            | Success (tx, _, _) ->
+                test <@ tx.Date = DateTime(2022, 1, 6) @>
+                test <@ tx.State = TransactionState.Cleared @>
+                test <@ tx.Description = "s.p. prispevki" @>
+            | Failure (err, _, _) ->
+                output.WriteLine $"%s{err}\n"
+                test <@ false @>
