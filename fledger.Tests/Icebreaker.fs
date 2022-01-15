@@ -1,6 +1,7 @@
 ﻿module fledger.Icebreaker
 
 open System
+open System.Globalization
 open Xunit
 open Swensen.Unquote
 open FsCheck
@@ -8,22 +9,24 @@ open FsCheck
 open FParsec
 open Xunit.Abstractions
 
-let sample =
-    @"2022/01/06 *s.p. prispevki
-  expenses:Business:Service charges    0.39 EUR
-  expenses:Business:Employment Costs    4.25 EUR
-  assets:current assets:Sparkasse    -4.64 EUR
-"
-
 type TransactionState =
     | Unmarked
     | Pending
     | Cleared
 
-type Transaction =
+type TransactionInfo =
     { Date: DateTime
       State: TransactionState
       Description: string }
+
+type PostingLine =
+    { Account: string
+      Amount: Decimal
+      Currency: string option }
+
+type Transaction =
+    { Info: TransactionInfo
+      Postings: PostingLine list }
 
 module JournalParsing =
     let pYear = pint32 .>> pstring "/"
@@ -37,7 +40,7 @@ module JournalParsing =
             pDay
             (fun year month day -> DateTime(year, month, day))
 
-    let pPendingTxDesc: Parser<(TransactionState * string), unit> =
+    let pPendingTxDesc: Parser<TransactionState * string, unit> =
         pipe3
             (pstring "!")
             spaces
@@ -70,9 +73,48 @@ module JournalParsing =
                   State = state
                   Description = description.Trim() })
 
-    let pTx = pTxFirstLine
+    let pAccountChar =
+        choice [ letter
+                 digit
+                 pchar ':'
+                 pchar '-'
+                 pchar '_'
+                 pchar ' ' ]
+
+    let pAccount: Parser<string, unit> = manyChars pAccountChar
+
+    let spaces2 = pchar ' ' .>> spaces1
+    let pAccountRef = spaces1 >>. pAccount .>> spaces2
+
+    let pAmount =
+        numberLiteral NumberLiteralOptions.DefaultFloat "amount"
+        |>> (fun num -> Decimal.Parse(num.String, CultureInfo.InvariantCulture))
+
+    let pPostingLine =
+        pipe3
+            pAccountRef
+            pAmount
+            (restOfLine true)
+            (fun account amount _ ->
+                { Account = account
+                  Amount = amount
+                  Currency = None })
+
+
+    let pPostingLines: Parser<PostingLine list, unit> = many pPostingLine
+
+    let pTx =
+        pTxFirstLine .>>. pPostingLines
+        |>> (fun (info, postings) -> { Info = info; Postings = postings })
 
 module Tests =
+    let sample =
+        @"2022/01/06 *s.p. prispevki
+      expenses:Business:Service charges    0.39 EUR
+      expenses:Business:Employment Costs    4.25 EUR
+      assets:current assets:Sparkasse    -4.64 EUR
+    "
+
     type LedgerParsingTests(output: ITestOutputHelper) =
         [<Fact>]
         member this.icebreaker() =
@@ -80,9 +122,9 @@ module Tests =
 
             match result with
             | Success (tx, _, _) ->
-                test <@ tx.Date = DateTime(2022, 1, 6) @>
-                test <@ tx.State = TransactionState.Cleared @>
-                test <@ tx.Description = "s.p. prispevki" @>
+                test <@ tx.Info.Date = DateTime(2022, 1, 6) @>
+                test <@ tx.Info.State = TransactionState.Cleared @>
+                test <@ tx.Info.Description = "s.p. prispevki" @>
             | Failure (err, _, _) ->
                 output.WriteLine $"%s{err}\n"
                 test <@ false @>
