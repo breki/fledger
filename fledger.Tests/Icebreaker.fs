@@ -19,20 +19,25 @@ type TransactionInfo =
       State: TransactionState
       Description: string }
 
+type Amount = { Value: Decimal; Currency: string }
+
 type PostingLine =
     { Account: string
-      Amount: Decimal
-      Currency: string option }
+      Amount: Amount
+      TotalPrice: Amount option }
 
 type Transaction =
     { Info: TransactionInfo
       Postings: PostingLine list }
 
 module JournalParsing =
-    let spacesTabs: Parser<string, unit> = manyChars (pchar ' ' <|> pchar '\t')
+    let spacesTabs: Parser<string, unit> =
+        manyChars (pchar ' ' <|> pchar '\t')
+        <?> "space or tab"
 
     let spacesTabs1: Parser<string, unit> =
         many1Chars (pchar ' ' <|> pchar '\t')
+        <?> "space or tab"
 
     let pYear = pint32 .>> pstring "/" <?> "year"
     let pMonth = pint32 .>> pstring "/"
@@ -109,22 +114,28 @@ module JournalParsing =
     let pCurrency: Parser<string, unit> =
         many1Chars pCurrencyChar <?> "currency"
 
-    let pAmount: Parser<decimal * string option, unit> =
+    let pAmount: Parser<Amount, unit> =
         pAmountValue
         .>>. ((spacesTabs1 >>. pCurrency .>> (restOfLine true)
                |>> Some)
               <|> ((restOfLine true) >>% None))
+        |>> (fun (value, currency) ->
+            { Value = value
+              Currency = currency |> Option.defaultValue "EUR" })
         <?> "amount"
 
+    let pTotalPriceIndicator = pstring "@@" >>. pAmount
 
     let pPostingLine =
-        pipe2
+        pipe3
             pAccountRef
             pAmount
-            (fun account (amount, currency) ->
+            ((pTotalPriceIndicator |>> Some)
+             <|> ((restOfLine true) >>% None))
+            (fun account amount totalPrice ->
                 { Account = account
                   Amount = amount
-                  Currency = currency })
+                  TotalPrice = totalPrice })
 
     let pPostingLines: Parser<PostingLine list, unit> = many pPostingLine
 
@@ -136,7 +147,7 @@ module Tests =
     let sample =
         @"2022/01/06 *s.p. prispevki
       expenses:Business:Service charges    0.39 EUR
-      expenses:Business:Employment Costs    4.25
+      expenses:Business:Employment Costs    4.25  @@ 12.20 USD
       assets:current assets:Sparkasse    -4.64 EUR
 "
 
@@ -150,14 +161,14 @@ module Tests =
                         Description = "s.p. prispevki" }
                   Postings =
                       [ { Account = "expenses:Business:Service charges"
-                          Amount = 0.39m
-                          Currency = Some "EUR" }
+                          Amount = { Value = 0.39m; Currency = "EUR" }
+                          TotalPrice = None }
                         { Account = "expenses:Business:Employment Costs"
-                          Amount = 4.25m
-                          Currency = None }
+                          Amount = { Value = 4.25m; Currency = "EUR" }
+                          TotalPrice = Some { Value = 12.2m; Currency = "USD" } }
                         { Account = "assets:current assets:Sparkasse"
-                          Amount = -4.64m
-                          Currency = Some "EUR" } ] }
+                          Amount = { Value = -4.64m; Currency = "EUR" }
+                          TotalPrice = None } ] }
 
             let result = run JournalParsing.pTx sample
 
