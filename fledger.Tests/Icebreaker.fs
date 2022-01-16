@@ -114,28 +114,37 @@ module JournalParsing =
     let pCurrency: Parser<string, unit> =
         many1Chars pCurrencyChar <?> "currency"
 
-    let pAmount: Parser<Amount, unit> =
-        pAmountValue
-        .>>. ((spacesTabs1 >>. pCurrency .>> (restOfLine true)
-               |>> Some)
-              <|> ((restOfLine true) >>% None))
-        |>> (fun (value, currency) ->
-            { Value = value
-              Currency = currency |> Option.defaultValue "EUR" })
-        <?> "amount"
+    let pAmountCurrency =
+        (spacesTabs1 >>. pCurrency) |> attempt
+        <??> "amount currency"
 
-    let pTotalPriceIndicator = pstring "@@" >>. pAmount
+    let pAmount: Parser<Amount, unit> =
+        pipe2
+            pAmountValue
+            (opt pAmountCurrency)
+            (fun amount currency ->
+                match currency with
+                | Some currency -> { Value = amount; Currency = currency }
+                | None -> { Value = amount; Currency = "EUR" })
+        <??> "amount"
+
+    let pTotalPrice =
+        spacesTabs1 >>. pstring "@@" .>> spacesTabs1
+        >>. pAmount
+        <??> "total price"
 
     let pPostingLine =
-        pipe3
+        pipe5
             pAccountRef
             pAmount
-            ((pTotalPriceIndicator |>> Some)
-             <|> ((restOfLine true) >>% None))
-            (fun account amount totalPrice ->
+            (opt pTotalPrice)
+            spacesTabs
+            newline
+            (fun account amount totalPrice _ _ ->
                 { Account = account
                   Amount = amount
                   TotalPrice = totalPrice })
+        <??> "posting line"
 
     let pPostingLines: Parser<PostingLine list, unit> = many pPostingLine
 
