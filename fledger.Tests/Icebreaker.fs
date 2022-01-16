@@ -24,7 +24,8 @@ type Amount = { Value: Decimal; Currency: string }
 type PostingLine =
     { Account: string
       Amount: Amount
-      TotalPrice: Amount option }
+      TotalPrice: Amount option
+      ExpectedBalance: Amount option }
 
 type Transaction =
     { Info: TransactionInfo
@@ -38,6 +39,8 @@ module JournalParsing =
     let spacesTabs1: Parser<string, unit> =
         many1Chars (pchar ' ' <|> pchar '\t')
         <?> "space or tab"
+
+    let endOfLineWhitespace: Parser<unit, unit> = spacesTabs >>. newline >>% ()
 
     let pYear = pint32 .>> pstring "/" <?> "year"
     let pMonth = pint32 .>> pstring "/"
@@ -128,22 +131,36 @@ module JournalParsing =
                 | None -> { Value = amount; Currency = "EUR" })
         <??> "amount"
 
+    let pTotalPriceIndicator =
+        pstring "@@" >>% ()
+        <?> "total price indicator (@@)"
+
     let pTotalPrice =
-        spacesTabs1 >>. pstring "@@" .>> spacesTabs1
-        >>. pAmount
+        (spacesTabs1 >>? pTotalPriceIndicator
+         .>>? spacesTabs1
+         >>. pAmount)
+        |> attempt
         <??> "total price"
+
+    let pExpectedBalance =
+        (pchar ' ' >>. spacesTabs1 >>? (pstring "=")
+         .>> spacesTabs1
+         >>. pAmount)
+        |> attempt
+        <??> "expected balance"
 
     let pPostingLine =
         pipe5
             pAccountRef
             pAmount
             (opt pTotalPrice)
-            spacesTabs
-            newline
-            (fun account amount totalPrice _ _ ->
+            (opt pExpectedBalance)
+            endOfLineWhitespace
+            (fun account amount totalPrice expectedBalance _ ->
                 { Account = account
                   Amount = amount
-                  TotalPrice = totalPrice })
+                  TotalPrice = totalPrice
+                  ExpectedBalance = expectedBalance })
         <??> "posting line"
 
     let pPostingLines: Parser<PostingLine list, unit> = many pPostingLine
@@ -157,7 +174,7 @@ module Tests =
         @"2022/01/06 *s.p. prispevki
       expenses:Business:Service charges    0.39 EUR
       expenses:Business:Employment Costs    4.25  @@ 12.20 USD
-      assets:current assets:Sparkasse    -4.64 EUR
+      assets:current assets:Sparkasse    -4.64 EUR  = 132.55 EUR
 "
 
     type LedgerParsingTests(output: ITestOutputHelper) =
@@ -171,13 +188,17 @@ module Tests =
                   Postings =
                       [ { Account = "expenses:Business:Service charges"
                           Amount = { Value = 0.39m; Currency = "EUR" }
-                          TotalPrice = None }
+                          TotalPrice = None
+                          ExpectedBalance = None }
                         { Account = "expenses:Business:Employment Costs"
                           Amount = { Value = 4.25m; Currency = "EUR" }
-                          TotalPrice = Some { Value = 12.2m; Currency = "USD" } }
+                          TotalPrice = Some { Value = 12.2m; Currency = "USD" }
+                          ExpectedBalance = None }
                         { Account = "assets:current assets:Sparkasse"
                           Amount = { Value = -4.64m; Currency = "EUR" }
-                          TotalPrice = None } ] }
+                          TotalPrice = None
+                          ExpectedBalance =
+                              Some { Value = 132.55m; Currency = "EUR" } } ] }
 
             let result = run JournalParsing.pTx sample
 
