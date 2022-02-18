@@ -183,12 +183,14 @@ module Tests =
 
     type LedgerParsingTests(output: ITestOutputHelper) =
         [<Fact>]
-        member this.icebreaker() =
+        member this.``transaction parsing``() =
+            let transactionDescription = "s.p. prispevki"
+
             let expectedTransaction =
                 { Info =
                       { Date = DateTime(2022, 1, 6)
                         State = TransactionState.Cleared
-                        Description = Description("s.p. prispevki") }
+                        Description = Description(transactionDescription) }
                   Postings =
                       [ { Account = "expenses:Business:Service charges"
                           Amount = { Value = 0.39m; Currency = "EUR" }
