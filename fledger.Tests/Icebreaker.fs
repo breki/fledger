@@ -14,10 +14,14 @@ type TransactionState =
     | Pending
     | Cleared
 
+type TransactionDescription =
+    | Description of string
+    | PayeeNote of (string * string)
+
 type TransactionInfo =
     { Date: DateTime
       State: TransactionState
-      Description: string }
+      Description: TransactionDescription }
 
 type Amount = { Value: Decimal; Currency: string }
 
@@ -84,7 +88,7 @@ module JournalParsing =
             (fun date _ (state, description) ->
                 { Date = date
                   State = state
-                  Description = description.Trim() })
+                  Description = Description(description.Trim()) })
 
     let pAccountChar =
         choice [ letter
@@ -184,7 +188,7 @@ module Tests =
                 { Info =
                       { Date = DateTime(2022, 1, 6)
                         State = TransactionState.Cleared
-                        Description = "s.p. prispevki" }
+                        Description = Description("s.p. prispevki") }
                   Postings =
                       [ { Account = "expenses:Business:Service charges"
                           Amount = { Value = 0.39m; Currency = "EUR" }
