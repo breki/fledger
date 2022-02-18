@@ -174,6 +174,41 @@ module JournalParsing =
         |>> (fun (info, postings) -> { Info = info; Postings = postings })
 
 module Tests =
+    type RandomTransaction =
+        { TransactionText: string
+          Description: TransactionDescription }
+
+    let randomTransaction () =
+        gen {
+            let transactionDescription = Description("s.p. prispevki")
+
+            let text =
+                @"2022/01/06 *s.p. prispevki
+              expenses:Business:Service charges    0.39 EUR
+              expenses:Business:Employment Costs    4.25  @@ 12.20 USD
+              assets:current assets:Sparkasse    -4.64 EUR  = 132.55 EUR
+        "
+
+
+            return
+                { TransactionText = text
+                  Description = transactionDescription }
+        }
+
+    let transactionIsParsedCorrectly
+        (output: ITestOutputHelper)
+        (randomTransaction: RandomTransaction)
+        =
+        let result =
+            run JournalParsing.pTx randomTransaction.TransactionText
+
+        match result with
+        | Success (tx, _, _) ->
+            tx.Info.Description = randomTransaction.Description
+        | Failure (err, _, _) ->
+            output.WriteLine $"%s{err}\n"
+            false
+
     let sample =
         @"2022/01/06 *s.p. prispevki
       expenses:Business:Service charges    0.39 EUR
@@ -184,13 +219,17 @@ module Tests =
     type LedgerParsingTests(output: ITestOutputHelper) =
         [<Fact>]
         member this.``transaction parsing``() =
-            let transactionDescription = "s.p. prispevki"
+            let arbTransaction = randomTransaction () |> Arb.fromGen
+
+            (transactionIsParsedCorrectly output)
+            |> Prop.forAll arbTransaction
+            |> Check.QuickThrowOnFailure
 
             let expectedTransaction =
                 { Info =
                       { Date = DateTime(2022, 1, 6)
                         State = TransactionState.Cleared
-                        Description = Description(transactionDescription) }
+                        Description = Description("s.p. prispevki") }
                   Postings =
                       [ { Account = "expenses:Business:Service charges"
                           Amount = { Value = 0.39m; Currency = "EUR" }
