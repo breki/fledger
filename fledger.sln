@@ -4,6 +4,11 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "fledger", "fledger\fledger.
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "fledger.Tests", "fledger.Tests\fledger.Tests.fsproj", "{D52BB5D9-204D-4C12-9219-F1835A59E5E9}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Files", "Solution Files", "{0D499F7B-8A45-43AA-A7FC-8E16E23C137B}"
+	ProjectSection(SolutionItems) = preProject
+		tcr.bat = tcr.bat
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
