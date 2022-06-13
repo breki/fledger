@@ -2,15 +2,17 @@
 
 open System
 
-type TransactionState =
+type TransactionStatus =
     | Unmarked
     | Pending
     | Cleared
 
+// todo 10: add support for transaction comment
 type TransactionInfo =
     { Date: DateTime
-      State: TransactionState
-      Description: string }
+      Status: TransactionStatus
+      Description: string option
+      Comment: string option }
 
 type Amount = { Value: Decimal; Currency: string }
 
