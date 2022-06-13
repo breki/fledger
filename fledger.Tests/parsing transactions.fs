@@ -4,18 +4,32 @@ open fledger.Journal
 
 open System
 open Xunit
-open Swensen.Unquote
 open FsCheck
 
 open FParsec
 open Xunit.Abstractions
 
-let sample =
-    @"2022/01/06 *s.p. prispevki
+
+let chooseFromRandomTransaction () =
+    gen {
+        let! dateFormat = Arb.from<bool>.Generator
+
+        // todo 10: parametrize the sample transaction
+        if dateFormat then
+            return
+                @"2022/01/06 *s.p. prispevki
   expenses:Business:Service charges    0.39 EUR
   expenses:Business:Employment Costs    4.25  @@ 12.20 USD
   assets:current assets:Sparkasse    -4.64 EUR  = 132.55 EUR
 "
+        else
+            return
+                @"2022-01-06 *s.p. prispevki
+  expenses:Business:Service charges    0.39 EUR
+  expenses:Business:Employment Costs    4.25  @@ 12.20 USD
+  assets:current assets:Sparkasse    -4.64 EUR  = 132.55 EUR
+"
+    }
 
 type LedgerParsingTests(output: ITestOutputHelper) =
     [<Fact>]
@@ -40,10 +54,24 @@ type LedgerParsingTests(output: ITestOutputHelper) =
                       ExpectedBalance =
                           Some { Value = 132.55m; Currency = "EUR" } } ] }
 
-        let result = run JournalParsing.pTx sample
+        let randomTransaction =
+            chooseFromRandomTransaction () |> Arb.fromGen
 
-        match result with
-        | Success (tx, _, _) -> test <@ tx = expectedTransaction @>
-        | Failure (err, _, _) ->
-            output.WriteLine $"%s{err}\n"
-            test <@ false @>
+        let transactionIsParsedCorrectly transactionString =
+            let result = run JournalParsing.pTx transactionString
+
+            match result with
+            | Success (tx, _, _) -> tx = expectedTransaction
+            // todo 20: how to record the error so it is visible in test
+            //   results?
+            | Failure _ -> false
+
+        transactionIsParsedCorrectly
+        |> Prop.forAll randomTransaction
+        |> Check.QuickThrowOnFailure
+
+//            match result with
+//            | Success (tx, _, _) -> test <@ tx = expectedTransaction @>
+//            | Failure (err, _, _) ->
+//                output.WriteLine $"%s{err}\n"
+//                test <@ false @>

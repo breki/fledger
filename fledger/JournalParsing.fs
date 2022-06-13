@@ -17,16 +17,13 @@ let spacesTabs1: Parser<string, unit> =
 
 let endOfLineWhitespace: Parser<unit, unit> = spacesTabs >>. newline >>% ()
 
-let pYear = pint32 .>> pstring "/" <?> "year"
-let pMonth = pint32 .>> pstring "/"
+let pDatePartSeparator: Parser<char, unit> = pchar '/' <|> pchar '-'
+let pYear = pint32 .>> pDatePartSeparator <?> "year"
+let pMonth = pint32 .>> pDatePartSeparator
 let pDay = pint32
 
 let pDate =
-    pipe3
-        pYear
-        pMonth
-        pDay
-        (fun year month day -> DateTime(year, month, day))
+    pipe3 pYear pMonth pDay (fun year month day -> DateTime(year, month, day))
 
 let pPendingTxDesc: Parser<TransactionState * string, unit> =
     pipe3
@@ -89,8 +86,7 @@ let pAmountValue =
 
 let pCurrencyChar = letter
 
-let pCurrency: Parser<string, unit> =
-    many1Chars pCurrencyChar <?> "currency"
+let pCurrency: Parser<string, unit> = many1Chars pCurrencyChar <?> "currency"
 
 let pAmountCurrency =
     (spacesTabs1 >>. pCurrency) |> attempt
@@ -143,4 +139,3 @@ let pPostingLines: Parser<PostingLine list, unit> = many pPostingLine
 let pTx =
     pTxFirstLine .>>. pPostingLines
     |>> (fun (info, postings) -> { Info = info; Postings = postings })
-
