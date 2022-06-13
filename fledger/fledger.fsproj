@@ -6,6 +6,7 @@
     </PropertyGroup>
 
     <ItemGroup>
+      <Compile Include="Text.fs" />
       <Compile Include="Journal.fs" />
       <Compile Include="JournalParsing.fs" />
     </ItemGroup>

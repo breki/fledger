@@ -1,6 +1,7 @@
 ﻿module fledger.``parsing transactions``
 
 open fledger.Journal
+open Text
 
 open System
 open Xunit
@@ -10,25 +11,23 @@ open FParsec
 open Xunit.Abstractions
 
 
+// todo 30: prepare a script for running TCR tool
+
 let chooseFromRandomTransaction () =
     gen {
         let! dateFormat = Arb.from<bool>.Generator
 
-        // todo 10: parametrize the sample transaction
-        if dateFormat then
-            return
-                @"2022/01/06 *s.p. prispevki
+        return
+            buildString ()
+            |> ifDo dateFormat (fun x -> x |> append "2022/01/06")
+            |> ifDont dateFormat (fun x -> x |> append "2022-01-06")
+            |> append
+                @" *s.p. prispevki
   expenses:Business:Service charges    0.39 EUR
   expenses:Business:Employment Costs    4.25  @@ 12.20 USD
   assets:current assets:Sparkasse    -4.64 EUR  = 132.55 EUR
 "
-        else
-            return
-                @"2022-01-06 *s.p. prispevki
-  expenses:Business:Service charges    0.39 EUR
-  expenses:Business:Employment Costs    4.25  @@ 12.20 USD
-  assets:current assets:Sparkasse    -4.64 EUR  = 132.55 EUR
-"
+            |> toString
     }
 
 type LedgerParsingTests(output: ITestOutputHelper) =
