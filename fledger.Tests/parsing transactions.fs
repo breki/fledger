@@ -21,6 +21,7 @@ let chooseFromRandomJournal () =
         let! hasStatus = Arb.from<bool>.Generator
         let! hasDescription = Arb.from<bool>.Generator
         let! hasComment = Arb.from<bool>.Generator
+        let! hasEmptyLinesBetweenTxs = Arb.from<bool>.Generator
         let! txCount = Gen.choose (0, 3)
 
         let txString =
@@ -37,6 +38,10 @@ let chooseFromRandomJournal () =
  
   assets:current assets:Sparkasse    -4.64 EUR  = 132.55 EUR
 "
+            |> ifDo hasEmptyLinesBetweenTxs (fun x ->
+                x
+                |> append
+                    $"{Environment.NewLine}     {Environment.NewLine}{Environment.NewLine}")
             |> toString
 
         // construct journalString by appending txString txCount times
