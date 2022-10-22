@@ -1,18 +1,17 @@
 ﻿module fledger.JournalParsing
 
-
 open FParsec
 
 open fledger.Journal
-open fledger.ParsingBasics
+open fledger.ParsingDefaultCommodity
 open fledger.ParsingTransactions
 
 
-let pJournalItem = pTx |>> Some
+let pJournalItem: Parser<JournalItem, unit> =
+    (pTx |>> Transaction)
+    <|> (pDefaultCommodity |>> DefaultCommodity)
 
 let pJournal: Parser<Journal, unit> =
     many pJournalItem
-    |>> fun txsMaybe ->
-            filterOutNone txsMaybe
-            |> (fun txs -> { Transactions = txs })
+    |>> fun items -> { Items = items }
     <?> "journal"

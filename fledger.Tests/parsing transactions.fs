@@ -11,8 +11,6 @@ open FsCheck
 open FParsec
 open Xunit.Abstractions
 
-// todo 10: add some random whitespace (empty or whitespace-only lines)
-// between transactions
 // todo 20: support for payee and note (pipe characters)
 
 let chooseFromRandomJournal () =
@@ -81,8 +79,8 @@ let chooseFromRandomJournal () =
                     ExpectedBalance = Some { Value = 132.55m; Currency = "EUR" } } ] }
 
         let expectedJournal =
-            { Transactions =
-                Enumerable.Repeat(expectedTransaction, txCount)
+            { Items =
+                Enumerable.Repeat(Transaction expectedTransaction, txCount)
                 |> Seq.toList }
 
         let result =

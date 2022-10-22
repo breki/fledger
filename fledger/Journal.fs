@@ -13,6 +13,7 @@ type TransactionInfo =
       Description: string option
       Comment: string option }
 
+// todo 10: amount currency should be optional
 type Amount = { Value: Decimal; Currency: string }
 
 type PostingLine =
@@ -25,4 +26,8 @@ type Transaction =
     { Info: TransactionInfo
       Postings: PostingLine list }
 
-type Journal = { Transactions: Transaction list }
+type JournalItem =
+    | Transaction of Transaction
+    | DefaultCommodity of Amount
+
+type Journal = { Items: JournalItem list }

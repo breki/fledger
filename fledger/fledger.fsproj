@@ -9,6 +9,8 @@
       <Compile Include="Text.fs" />
       <Compile Include="Journal.fs" />
       <Compile Include="ParsingBasics.fs" />
+      <Compile Include="ParsingAmounts.fs" />
+      <Compile Include="ParsingDefaultCommodity.fs" />
       <Compile Include="ParsingTransactions.fs" />
       <Compile Include="JournalParsing.fs" />
     </ItemGroup>
