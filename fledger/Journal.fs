@@ -7,7 +7,6 @@ type TransactionStatus =
     | Pending
     | Cleared
 
-// todo 10: add support for transaction comment
 type TransactionInfo =
     { Date: DateTime
       Status: TransactionStatus

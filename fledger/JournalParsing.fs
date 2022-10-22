@@ -59,7 +59,7 @@ let pTxDescriptionAndComment: Parser<string option * string option, unit> =
 // tx first line = date, [whitespace1], [status character], [whitespace],
 //                 [tx description], [whitespace], [tx comment]
 let pTxFirstLine =
-    pDate .>> whitespace1
+    pDate .>> whitespace
     .>>. (opt pTxStatus
           |>> fun optChar ->
                   match optChar with

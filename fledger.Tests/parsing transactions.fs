@@ -11,17 +11,21 @@ open FParsec
 open Xunit.Abstractions
 
 
+// todo 10: work on more randomization of the transaction
 let chooseFromRandomTransaction () =
     gen {
         let! dateFormat = Arb.from<bool>.Generator
+        let! hasStatus = Arb.from<bool>.Generator
+        let! hasDescription = Arb.from<bool>.Generator
         let! hasComment = Arb.from<bool>.Generator
 
         let txString =
             buildString ()
             |> ifDo dateFormat (fun x -> x |> append "2022/01/06")
             |> ifDont dateFormat (fun x -> x |> append "2022-01-06")
-            |> append @" *s.p. prispevki"
-            |> ifDo hasComment (fun x -> x |> append ";this is a comment")
+            |> ifDo hasStatus (fun x -> x |> append " *")
+            |> ifDo hasDescription (fun x -> x |> append "s.p. prispevki ")
+            |> ifDo hasComment (fun x -> x |> append "; this is a comment ")
             |> append
                 @"
   expenses:Business:Service charges    0.39 EUR
@@ -33,8 +37,16 @@ let chooseFromRandomTransaction () =
         let expectedTransaction =
             { Info =
                 { Date = DateTime(2022, 1, 6)
-                  Status = TransactionStatus.Cleared
-                  Description = Some "s.p. prispevki"
+                  Status =
+                    if hasStatus then
+                        TransactionStatus.Cleared
+                    else
+                        TransactionStatus.Unmarked
+                  Description =
+                    if hasDescription then
+                        Some "s.p. prispevki"
+                    else
+                        None
                   Comment =
                     if hasComment then
                         Some "this is a comment"
@@ -72,9 +84,6 @@ type LedgerParsingTests(output: ITestOutputHelper) =
                 expectedTransaction,
                 parserResult
             ) =
-            // todo 5: how to output the reason why the transaction
-            // is not as expected? - do we include the parsed transaction
-            // in the arbitrary itself?
             match parserResult with
             | Success (parsedTransaction, _, _) ->
                 output.WriteLine "PARSING SUCCESS"
