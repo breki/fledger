@@ -168,11 +168,13 @@ let pPostingLines: Parser<PostingLine list, unit> =
 
 let pTx =
     pTxFirstLine .>>. pPostingLines
-    |>> (fun (info, postings) -> { Info = info; Postings = postings } |> Some)
+    |>> (fun (info, postings) -> { Info = info; Postings = postings })
     <?> "tx"
 
+let pJournalItem = pTx |>> Some
+
 let pJournal: Parser<Journal, unit> =
-    many pTx
+    many pJournalItem
     |>> fun txsMaybe ->
             filterOutNone txsMaybe
             |> (fun txs -> { Transactions = txs })
