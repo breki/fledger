@@ -7,6 +7,11 @@ open System.Globalization
 
 open FParsec
 
+let filterOutNone items =
+    items
+    |> (List.filter Option.isSome)
+    |> List.map Option.get
+
 let trimStringOptional (s: string option) =
     match s with
     | Some s ->
@@ -158,18 +163,17 @@ let pPostingLine =
     <?> "posting line"
 
 let pPostingLines: Parser<PostingLine list, unit> =
-    many pPostingLine
-    |>> fun postingsMaybe ->
-            postingsMaybe
-            |> (List.filter Option.isSome)
-            |> List.map Option.get
+    many pPostingLine |>> filterOutNone
     <?> "posting lines"
 
 let pTx =
     pTxFirstLine .>>. pPostingLines
-    |>> (fun (info, postings) -> { Info = info; Postings = postings })
+    |>> (fun (info, postings) -> { Info = info; Postings = postings } |> Some)
     <?> "tx"
 
 let pJournal: Parser<Journal, unit> =
-    many pTx |>> (fun txs -> { Transactions = txs })
+    many pTx
+    |>> fun txsMaybe ->
+            filterOutNone txsMaybe
+            |> (fun txs -> { Transactions = txs })
     <?> "journal"
