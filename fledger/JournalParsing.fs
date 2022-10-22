@@ -9,7 +9,11 @@ open FParsec
 
 let trimStringOptional (s: string option) =
     match s with
-    | Some s -> s.Trim() |> Some
+    | Some s ->
+        s.Trim()
+        |> function
+            | "" -> None
+            | trimmed -> Some trimmed
     | None -> None
 
 let whitespace: Parser<string, unit> =
@@ -22,32 +26,35 @@ let whitespace1: Parser<string, unit> =
 
 let endOfLineWhitespace: Parser<unit, unit> =
     whitespace >>. newline >>% ()
+    <?> "end of line whitespace"
 
 let pDatePartSeparator: Parser<char, unit> =
-    pchar '/' <|> pchar '-'
+    pchar '/' <|> pchar '-' <?> "date part separator"
 
 let pYear =
     pint32 .>> pDatePartSeparator <?> "year"
 
-let pMonth = pint32 .>> pDatePartSeparator
-let pDay = pint32
+let pMonth =
+    pint32 .>> pDatePartSeparator <?> "month"
+
+let pDay = pint32 <?> "day"
 
 let pDate =
     pipe3 pYear pMonth pDay (fun year month day -> DateTime(year, month, day))
+    <?> "date"
 
 // status character = "!" | "*"
 let pTxStatus: Parser<char, unit> =
-    pchar '!' <|> pchar '*' <?> "transaction status"
+    pchar '!' <|> pchar '*' <?> "tx status"
 
-// tx description = text - ";"
-let pTxDescription: Parser<string, unit> =
-    manyChars (noneOf ";")
-    <?> "transaction description"
-
-// tx comment = ";", [comment], end of line
-let pTxComment =
-    pstring ";" >>. restOfLine true
-    <?> "transaction comment"
+// tx description and comment = [tx description], [";" [tx comment]], end of line
+let pTxDescriptionAndComment: Parser<string option * string option, unit> =
+    opt (manyChars (noneOf ";\n"))
+    .>>. ((pstring ";" >>. opt (restOfLine true))
+          <|> opt (restOfLine true))
+    <?> "tx description and comment"
+    |>> fun (description, comment) ->
+            (trimStringOptional description, trimStringOptional comment)
 
 // tx first line = date, [whitespace1], [status character], [whitespace],
 //                 [tx description], [whitespace], [tx comment]
@@ -61,14 +68,13 @@ let pTxFirstLine =
                   | None -> TransactionStatus.Unmarked
                   | _ -> failwith "invalid transaction state")
     .>> whitespace
-    .>>. (opt pTxDescription |>> trimStringOptional)
-    .>> whitespace
-    .>>. (opt pTxComment |>> trimStringOptional)
-    |>> fun (((date, status), description), comment) ->
+    .>>. pTxDescriptionAndComment
+    |>> fun ((date, status), (description, comment)) ->
             { Date = date
               Status = status
               Description = description
               Comment = comment }
+    <?> "tx first line"
 
 let pAccountChar =
     choice [ letter
@@ -103,14 +109,14 @@ let pCurrency: Parser<string, unit> =
 
 let pAmountCurrency =
     (whitespace1 >>. pCurrency) |> attempt
-    <??> "amount currency"
+    <?> "amount currency"
 
 let pAmount: Parser<Amount, unit> =
     pipe2 pAmountValue (opt pAmountCurrency) (fun amount currency ->
         match currency with
         | Some currency -> { Value = amount; Currency = currency }
         | None -> { Value = amount; Currency = "EUR" })
-    <??> "amount"
+    <?> "amount"
 
 let pTotalPriceIndicator =
     pstring "@@" >>% ()
@@ -121,14 +127,14 @@ let pTotalPrice =
      .>>? whitespace1
      >>. pAmount)
     |> attempt
-    <??> "total price"
+    <?> "total price"
 
 let pExpectedBalance =
     (pchar ' ' >>. whitespace1 >>? (pstring "=")
      .>> whitespace1
      >>. pAmount)
     |> attempt
-    <??> "expected balance"
+    <?> "expected balance"
 
 let pPostingLine =
     pipe5
@@ -142,11 +148,12 @@ let pPostingLine =
               Amount = amount
               TotalPrice = totalPrice
               ExpectedBalance = expectedBalance })
-    <??> "posting line"
+    <?> "posting line"
 
 let pPostingLines: Parser<PostingLine list, unit> =
-    many pPostingLine
+    many pPostingLine <?> "posting lines"
 
 let pTx =
     pTxFirstLine .>>. pPostingLines
     |>> (fun (info, postings) -> { Info = info; Postings = postings })
+    <?> "tx"
