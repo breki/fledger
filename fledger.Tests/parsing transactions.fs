@@ -1,5 +1,6 @@
 ﻿module fledger.``parsing transactions``
 
+open System.Linq
 open fledger.Journal
 open Text
 
@@ -10,14 +11,18 @@ open FsCheck
 open FParsec
 open Xunit.Abstractions
 
+// todo 10: add some random whitespace (empty or whitespace-only lines)
+// between transactions
+// todo 15: add some random whitespace (empty or whitespace-only lines)
+// between postings
 
-// todo 10: work on more randomization of the transaction
-let chooseFromRandomTransaction () =
+let chooseFromRandomJournal () =
     gen {
         let! dateFormat = Arb.from<bool>.Generator
         let! hasStatus = Arb.from<bool>.Generator
         let! hasDescription = Arb.from<bool>.Generator
         let! hasComment = Arb.from<bool>.Generator
+        let! txCount = Gen.choose (0, 3)
 
         let txString =
             buildString ()
@@ -33,6 +38,10 @@ let chooseFromRandomTransaction () =
   assets:current assets:Sparkasse    -4.64 EUR  = 132.55 EUR
 "
             |> toString
+
+        // construct journalString by appending txString txCount times
+        let journalString =
+            String.Concat(Enumerable.Repeat(txString, txCount))
 
         let expectedTransaction =
             { Info =
@@ -66,17 +75,22 @@ let chooseFromRandomTransaction () =
                     TotalPrice = None
                     ExpectedBalance = Some { Value = 132.55m; Currency = "EUR" } } ] }
 
-        let result: ParserResult<Transaction, unit> =
-            run JournalParsing.pTx txString
+        let expectedJournal =
+            { Transactions =
+                Enumerable.Repeat(expectedTransaction, txCount)
+                |> Seq.toList }
 
-        return txString, expectedTransaction, result
+        let result =
+            run JournalParsing.pJournal journalString
+
+        return journalString, expectedJournal, result
     }
 
 type LedgerParsingTests(output: ITestOutputHelper) =
     [<Fact>]
     member this.``parsing transactions``() =
-        let arbTransaction =
-            chooseFromRandomTransaction () |> Arb.fromGen
+        let arbJournal =
+            chooseFromRandomJournal () |> Arb.fromGen
 
         let transactionIsParsedCorrectly
             (
@@ -93,5 +107,5 @@ type LedgerParsingTests(output: ITestOutputHelper) =
                 false
 
         transactionIsParsedCorrectly
-        |> Prop.forAll arbTransaction
+        |> Prop.forAll arbJournal
         |> Check.QuickThrowOnFailure

@@ -157,3 +157,7 @@ let pTx =
     pTxFirstLine .>>. pPostingLines
     |>> (fun (info, postings) -> { Info = info; Postings = postings })
     <?> "tx"
+
+let pJournal: Parser<Journal, unit> =
+    many pTx |>> (fun txs -> { Transactions = txs })
+    <?> "journal"

@@ -24,3 +24,5 @@ type PostingLine =
 type Transaction =
     { Info: TransactionInfo
       Postings: PostingLine list }
+
+type Journal = { Transactions: Transaction list }
