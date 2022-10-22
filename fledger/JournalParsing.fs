@@ -28,6 +28,9 @@ let endOfLineWhitespace: Parser<unit, unit> =
     whitespace >>. newline >>% ()
     <?> "end of line whitespace"
 
+let pEmptyLine =
+    endOfLineWhitespace <?> "empty line"
+
 let pDatePartSeparator: Parser<char, unit> =
     pchar '/' <|> pchar '-' <?> "date part separator"
 
@@ -94,8 +97,7 @@ let pAccount: Parser<string, unit> =
     <?> "account name"
 
 let pAccountRef =
-    whitespace1 >>. pAccount .>> whitespace
-    <?> "account reference"
+    pAccount .>> whitespace <?> "account reference"
 
 let pAmountValue =
     numberLiteral NumberLiteralOptions.DefaultFloat "amount"
@@ -136,22 +138,32 @@ let pExpectedBalance =
     |> attempt
     <?> "expected balance"
 
-let pPostingLine =
-    pipe5
-        pAccountRef
-        pAmount
-        (opt pTotalPrice)
-        (opt pExpectedBalance)
-        endOfLineWhitespace
-        (fun account amount totalPrice expectedBalance _ ->
+let pPostingLineActual =
+    whitespace1 >>. pAccountRef
+    .>>. pAmount
+    .>>. (opt pTotalPrice)
+    .>>. (opt pExpectedBalance)
+    .>> endOfLineWhitespace
+    |>> fun (((account, amount), totalPrice), expectedBalance) ->
             { Account = account
               Amount = amount
               TotalPrice = totalPrice
-              ExpectedBalance = expectedBalance })
+              ExpectedBalance = expectedBalance }
+            |> Some
+    <?> "posting line"
+
+let pPostingLine =
+    attempt pPostingLineActual
+    <|> (pEmptyLine >>% None)
     <?> "posting line"
 
 let pPostingLines: Parser<PostingLine list, unit> =
-    many pPostingLine <?> "posting lines"
+    many pPostingLine
+    |>> fun postingsMaybe ->
+            postingsMaybe
+            |> (List.filter Option.isSome)
+            |> List.map Option.get
+    <?> "posting lines"
 
 let pTx =
     pTxFirstLine .>>. pPostingLines

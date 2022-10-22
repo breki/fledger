@@ -13,8 +13,7 @@ open Xunit.Abstractions
 
 // todo 10: add some random whitespace (empty or whitespace-only lines)
 // between transactions
-// todo 15: add some random whitespace (empty or whitespace-only lines)
-// between postings
+// todo 20: support for payee and note (pipe characters)
 
 let chooseFromRandomJournal () =
     gen {
@@ -34,7 +33,8 @@ let chooseFromRandomJournal () =
             |> append
                 @"
   expenses:Business:Service charges    0.39 EUR
-  expenses:Business:Employment Costs    4.25  @@ 12.20 USD
+ expenses:Business:Employment Costs    4.25  @@ 12.20 USD
+ 
   assets:current assets:Sparkasse    -4.64 EUR  = 132.55 EUR
 "
             |> toString
