@@ -13,8 +13,9 @@ type TransactionInfo =
       Description: string option
       Comment: string option }
 
-// todo 10: amount currency should be optional
-type Amount = { Value: Decimal; Currency: string }
+type Amount =
+    { Value: Decimal
+      Currency: string option }
 
 type PostingLine =
     { Account: string

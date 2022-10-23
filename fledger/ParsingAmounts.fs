@@ -25,6 +25,8 @@ let pAmountCurrency =
 let pAmount: Parser<Amount, unit> =
     pipe2 pAmountValue (opt pAmountCurrency) (fun amount currency ->
         match currency with
-        | Some currency -> { Value = amount; Currency = currency }
-        | None -> { Value = amount; Currency = "EUR" })
+        | Some currency ->
+            { Value = amount
+              Currency = Some currency }
+        | None -> { Value = amount; Currency = None })
     <?> "amount"

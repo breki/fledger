@@ -1,4 +1,4 @@
-﻿module fledger.``parsing transactions``
+﻿module fledger.``parsing journal``
 
 open System.Linq
 open fledger.Journal
@@ -66,17 +66,22 @@ let chooseFromRandomJournal () =
                         None }
               Postings =
                 [ { Account = "expenses:Business:Service charges"
-                    Amount = { Value = 0.39m; Currency = "EUR" }
+                    Amount = { Value = 0.39m; Currency = Some "EUR" }
                     TotalPrice = None
                     ExpectedBalance = None }
                   { Account = "expenses:Business:Employment Costs"
-                    Amount = { Value = 4.25m; Currency = "EUR" }
-                    TotalPrice = Some { Value = 12.2m; Currency = "USD" }
+                    Amount = { Value = 4.25m; Currency = None }
+                    TotalPrice = Some { Value = 12.2m; Currency = Some "USD" }
                     ExpectedBalance = None }
                   { Account = "assets:current assets:Sparkasse"
-                    Amount = { Value = -4.64m; Currency = "EUR" }
+                    Amount =
+                      { Value = -4.64m
+                        Currency = Some "EUR" }
                     TotalPrice = None
-                    ExpectedBalance = Some { Value = 132.55m; Currency = "EUR" } } ] }
+                    ExpectedBalance =
+                      Some
+                          { Value = 132.55m
+                            Currency = Some "EUR" } } ] }
 
         let expectedJournal =
             { Items =
@@ -89,9 +94,9 @@ let chooseFromRandomJournal () =
         return journalString, expectedJournal, result
     }
 
-type LedgerParsingTests(output: ITestOutputHelper) =
+type JournalParsingTests(output: ITestOutputHelper) =
     [<Fact>]
-    member this.``parsing transactions``() =
+    member this.``parsing journal``() =
         let arbJournal =
             chooseFromRandomJournal () |> Arb.fromGen
 
