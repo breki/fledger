@@ -1,6 +1,7 @@
 ﻿module fledger.``parsing journal``
 
 open System.Linq
+open fledger.ParsingBasics
 open fledger.Journal
 open Text
 
@@ -11,9 +12,10 @@ open FsCheck
 open FParsec
 open Xunit.Abstractions
 
+// todo 10: finish implementing support for default commodity declaration
 // todo 20: support for payee and note (pipe characters)
 
-let chooseFromRandomJournal () =
+let chooseFromRandomJournal (output: ITestOutputHelper) =
     gen {
         let! dateFormat = Arb.from<bool>.Generator
         let! hasStatus = Arb.from<bool>.Generator
@@ -21,6 +23,11 @@ let chooseFromRandomJournal () =
         let! hasComment = Arb.from<bool>.Generator
         let! hasEmptyLinesBetweenTxs = Arb.from<bool>.Generator
         let! txCount = Gen.choose (0, 3)
+
+        let defaultCommodityString =
+            @"D 1,000.00 EUR
+                
+"
 
         let txString =
             buildString ()
@@ -44,7 +51,13 @@ let chooseFromRandomJournal () =
 
         // construct journalString by appending txString txCount times
         let journalString =
-            String.Concat(Enumerable.Repeat(txString, txCount))
+            defaultCommodityString
+            + String.Concat(Enumerable.Repeat(txString, txCount))
+
+        let expectedDefaultCommodity =
+            { Value = 1000.00m
+              Currency = Some "EUR" }
+            |> DefaultCommodity
 
         let expectedTransaction =
             { Info =
@@ -85,11 +98,18 @@ let chooseFromRandomJournal () =
 
         let expectedJournal =
             { Items =
-                Enumerable.Repeat(Transaction expectedTransaction, txCount)
-                |> Seq.toList }
+                expectedDefaultCommodity
+                :: (Enumerable.Repeat(Transaction expectedTransaction, txCount)
+                    |> Seq.toList) }
+
+        let userState = { Output = output }
 
         let result =
-            run JournalParsing.pJournal journalString
+            runParserOnString
+                ParsingJournal.pJournal
+                userState
+                "test stream"
+                journalString
 
         return journalString, expectedJournal, result
     }
@@ -98,7 +118,7 @@ type JournalParsingTests(output: ITestOutputHelper) =
     [<Fact>]
     member this.``parsing journal``() =
         let arbJournal =
-            chooseFromRandomJournal () |> Arb.fromGen
+            chooseFromRandomJournal output |> Arb.fromGen
 
         let transactionIsParsedCorrectly
             (

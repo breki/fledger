@@ -9,11 +9,11 @@ open fledger.ParsingAmounts
 
 
 // status character = "!" | "*"
-let pTxStatus: Parser<char, unit> =
+let pTxStatus: Parser<char, UserState> =
     pchar '!' <|> pchar '*' <?> "tx status"
 
 // tx description and comment = [tx description], [";" [tx comment]], end of line
-let pTxDescriptionAndComment: Parser<string option * string option, unit> =
+let pTxDescriptionAndComment: Parser<string option * string option, UserState> =
     opt (manyChars (noneOf ";\n"))
     .>>. ((pstring ";" >>. opt (restOfLine true))
           <|> opt (restOfLine true))
@@ -54,7 +54,7 @@ let pAmountSeparator =
     (pstring " " .>> (pstring " ") |> attempt
      <?> "amount separator")
 
-let pAccount: Parser<string, unit> =
+let pAccount: Parser<string, UserState> =
     many1CharsTill pAccountChar pAmountSeparator
     <?> "account name"
 
@@ -98,11 +98,11 @@ let pPostingLine =
     <|> (pEmptyLine >>% None)
     <?> "posting line"
 
-let pPostingLines: Parser<PostingLine list, unit> =
+let pPostingLines: Parser<PostingLine list, UserState> =
     many pPostingLine |>> filterOutNone
     <?> "posting lines"
 
-let pTx =
+let pTx: Parser<Transaction, UserState> =
     pTxFirstLine .>>. pPostingLines
     |>> (fun (info, postings) -> { Info = info; Postings = postings })
     <?> "tx"

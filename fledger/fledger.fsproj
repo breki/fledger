@@ -12,11 +12,12 @@
       <Compile Include="ParsingAmounts.fs" />
       <Compile Include="ParsingDefaultCommodity.fs" />
       <Compile Include="ParsingTransactions.fs" />
-      <Compile Include="JournalParsing.fs" />
+      <Compile Include="ParsingJournal.fs" />
     </ItemGroup>
 
     <ItemGroup>
       <PackageReference Include="FParsec" Version="1.1.1" />
+      <PackageReference Include="xunit.abstractions" Version="2.0.3" />
     </ItemGroup>
 
 </Project>

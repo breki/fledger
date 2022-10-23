@@ -3,6 +3,12 @@
 open System
 
 open FParsec
+open Xunit.Abstractions
+
+// Note that adding test output to user state is attempt in despair,
+// since I don't know how to effectively debug/trace the parsing.
+// And currently I even don't know how to use the user state at all.
+type UserState = { Output: ITestOutputHelper }
 
 let filterOutNone items =
     items
@@ -18,22 +24,24 @@ let trimStringOptional (s: string option) =
             | trimmed -> Some trimmed
     | None -> None
 
-let whitespace: Parser<string, unit> =
+let BP (p: Parser<_, _>) stream = p stream // set a breakpoint here
+
+let whitespace: Parser<string, UserState> =
     manyChars (pchar ' ' <|> pchar '\t')
     <?> "whitespace"
 
-let whitespace1: Parser<string, unit> =
+let whitespace1: Parser<string, UserState> =
     many1Chars (pchar ' ' <|> pchar '\t')
     <?> "whitespace 1"
 
-let endOfLineWhitespace: Parser<unit, unit> =
+let endOfLineWhitespace: Parser<unit, UserState> =
     whitespace >>. newline >>% ()
     <?> "end of line whitespace"
 
 let pEmptyLine =
     endOfLineWhitespace <?> "empty line"
 
-let pDatePartSeparator: Parser<char, unit> =
+let pDatePartSeparator: Parser<char, UserState> =
     pchar '/' <|> pchar '-' <?> "date part separator"
 
 let pYear =
