@@ -10,14 +10,14 @@ open fledger.ParsingAmounts
 
 // status character = "!" | "*"
 let pTxStatus: Parser<char, UserState> =
-    pchar '!' <|> pchar '*' <?> "tx status"
+    pchar '!' <|> pchar '*' <??> "tx status"
 
 // tx description and comment = [tx description], [";" [tx comment]], end of line
 let pTxDescriptionAndComment: Parser<string option * string option, UserState> =
     opt (manyChars (noneOf ";\n"))
     .>>. ((pstring ";" >>. opt (restOfLine true))
           <|> opt (restOfLine true))
-    <?> "tx description and comment"
+    <??> "tx description and comment"
     |>> fun (description, comment) ->
             (trimStringOptional description, trimStringOptional comment)
 
@@ -39,7 +39,7 @@ let pTxFirstLine =
               Status = status
               Description = description
               Comment = comment }
-    <?> "tx first line"
+    <??> "tx first line"
 
 let pAccountChar =
     choice [ letter
@@ -48,36 +48,36 @@ let pAccountChar =
              pchar '-'
              pchar '_'
              pchar ' ' ]
-    <?> "account name character "
+    <??> "account name character "
 
 let pAmountSeparator =
     (pstring " " .>> (pstring " ") |> attempt
-     <?> "amount separator")
+     <??> "amount separator")
 
 let pAccount: Parser<string, UserState> =
     many1CharsTill pAccountChar pAmountSeparator
-    <?> "account name"
+    <??> "account name"
 
 let pAccountRef =
-    pAccount .>> whitespace <?> "account reference"
+    pAccount .>> whitespace <??> "account reference"
 
 let pTotalPriceIndicator =
     pstring "@@" >>% ()
-    <?> "total price indicator (@@)"
+    <??> "total price indicator (@@)"
 
 let pTotalPrice =
     (whitespace1 >>? pTotalPriceIndicator
      .>>? whitespace1
      >>. pAmount)
     |> attempt
-    <?> "total price"
+    <??> "total price"
 
 let pExpectedBalance =
     (pchar ' ' >>. whitespace1 >>? (pstring "=")
      .>> whitespace1
      >>. pAmount)
     |> attempt
-    <?> "expected balance"
+    <??> "expected balance"
 
 let pPostingLineActual =
     whitespace1 >>. pAccountRef
@@ -91,18 +91,18 @@ let pPostingLineActual =
               TotalPrice = totalPrice
               ExpectedBalance = expectedBalance }
             |> Some
-    <?> "posting line"
+    <??> "posting line"
 
 let pPostingLine =
     attempt pPostingLineActual
     <|> (pEmptyLine >>% None)
-    <?> "posting line"
+    <??> "posting line"
 
 let pPostingLines: Parser<PostingLine list, UserState> =
     many pPostingLine |>> filterOutNone
-    <?> "posting lines"
+    <??> "posting lines"
 
 let pTx: Parser<Transaction, UserState> =
     pTxFirstLine .>>. pPostingLines
     |>> (fun (info, postings) -> { Info = info; Postings = postings })
-    <?> "tx"
+    <??> "tx"

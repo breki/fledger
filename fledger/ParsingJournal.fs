@@ -11,12 +11,12 @@ open fledger.ParsingTransactions
 let pJournalItem: Parser<JournalItem option, UserState> =
     (pTx |>> Transaction |>> Some)
     <|> (pDefaultCommodity |>> Some)
-    // <|> (pEmptyLine |>> fun () -> None)
-    <?> "journal item"
+    <|> (pEmptyLine |>> fun _ -> None)
+    <??> "journal item"
 
 let pJournal: Parser<Journal, UserState> =
     many pJournalItem .>> eof
     |>> fun items ->
             let actualItems = filterOutNone items
             { Items = actualItems }
-    <?> "journal"
+    <??> "journal"

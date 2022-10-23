@@ -18,10 +18,10 @@ open Xunit.Abstractions
 let chooseFromRandomJournal (output: ITestOutputHelper) =
     gen {
         let! dateFormat = Arb.from<bool>.Generator
-        let! hasStatus = Arb.from<bool>.Generator
-        let! hasDescription = Arb.from<bool>.Generator
-        let! hasComment = Arb.from<bool>.Generator
-        let! hasEmptyLinesBetweenTxs = Arb.from<bool>.Generator
+        let hasStatus = false // Arb.from<bool>.Generator
+        let hasDescription = false // Arb.from<bool>.Generator
+        let hasComment = false //Arb.from<bool>.Generator
+        let hasEmptyLinesBetweenTxs = false //= Arb.from<bool>.Generator
         let! txCount = Gen.choose (0, 3)
 
         let defaultCommodityString =

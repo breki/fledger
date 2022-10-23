@@ -28,30 +28,34 @@ let BP (p: Parser<_, _>) stream = p stream // set a breakpoint here
 
 let whitespace: Parser<string, UserState> =
     manyChars (pchar ' ' <|> pchar '\t')
-    <?> "whitespace"
+    <??> "whitespace"
 
 let whitespace1: Parser<string, UserState> =
     many1Chars (pchar ' ' <|> pchar '\t')
-    <?> "whitespace 1"
+    <??> "whitespace 1"
+
+let newlineOrEof: Parser<unit, UserState> =
+    (newline |>> fun _ -> ()) <|> eof
+    <??> "newline or eof"
 
 let endOfLineWhitespace: Parser<unit, UserState> =
-    whitespace >>. newline >>% ()
-    <?> "end of line whitespace"
+    whitespace >>. newlineOrEof >>% ()
+    <??> "end of line whitespace"
 
 let pEmptyLine =
-    endOfLineWhitespace <?> "empty line"
+    whitespace >>. newline <??> "empty line"
 
 let pDatePartSeparator: Parser<char, UserState> =
-    pchar '/' <|> pchar '-' <?> "date part separator"
+    pchar '/' <|> pchar '-' <??> "date part separator"
 
 let pYear =
-    pint32 .>> pDatePartSeparator <?> "year"
+    pint32 .>> pDatePartSeparator <??> "year"
 
 let pMonth =
-    pint32 .>> pDatePartSeparator <?> "month"
+    pint32 .>> pDatePartSeparator <??> "month"
 
-let pDay = pint32 <?> "day"
+let pDay = pint32 <??> "day"
 
 let pDate =
     pipe3 pYear pMonth pDay (fun year month day -> DateTime(year, month, day))
-    <?> "date"
+    <??> "date"
