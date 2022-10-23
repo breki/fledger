@@ -13,11 +13,12 @@ let filterOutNone items =
     |> List.map Option.get
 
 let pTxPosting: Parser<char, unit> =
-    pchar 'x' <??> "posting"
+    pchar 'x' .>> (many digit) <??> "posting"
 
 let pTxPostingOrEmptyLine =
     (pTxPosting |>> Some)
     <|> (pchar ' ' |>> (fun _ -> None))
+    <??> "posting or empty line"
 
 let pTx: Parser<string, unit> =
     pchar 'T' .>>. (many pTxPostingOrEmptyLine)
@@ -47,7 +48,8 @@ let pJournal =
 type FParsecExplorationTests(output: ITestOutputHelper) =
     [<Fact>]
     member this.parsingSimpleJournal() =
-        let result = run pJournal "Tx x D TTxD D D"
+        let result =
+            run pJournal "Tx10 x20 D TTx333D D D"
 
         match result with
         | Success (journal, _, _) ->
