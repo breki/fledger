@@ -15,11 +15,21 @@ let filterOutNone items =
 let pTxPosting: Parser<char, unit> =
     pchar 'x' <??> "posting"
 
-let pTx =
-    pchar 'T' .>> (many pTxPosting) <??> "tx"
+let pTxPostingOrEmptyLine =
+    (pTxPosting |>> Some)
+    <|> (pchar ' ' |>> (fun _ -> None))
 
-let pDc: Parser<char, unit> =
-    pchar 'D' <??> "default commodity"
+let pTx: Parser<string, unit> =
+    pchar 'T' .>>. (many pTxPostingOrEmptyLine)
+    |>> (fun (c, postings) ->
+        c :: filterOutNone postings
+        |> List.toArray
+        |> String)
+    <??> "tx"
+
+let pDc: Parser<string, unit> =
+    pchar 'D' |>> (fun _ -> "D")
+    <??> "default commodity"
 
 let pEmptyLine: Parser<char, unit> =
     pchar ' ' <??> "empty line"
@@ -37,12 +47,12 @@ let pJournal =
 type FParsecExplorationTests(output: ITestOutputHelper) =
     [<Fact>]
     member this.parsingSimpleJournal() =
-        let result = run pJournal "Tx x D TTxD DD"
+        let result = run pJournal "Tx x D TTxD D D"
 
         match result with
         | Success (journal, _, _) ->
             let printableJournal =
-                journal |> List.toArray |> String
+                journal |> List.toArray |> String.Concat
 
             output.WriteLine $"PARSING SUCCESS: {printableJournal}"
             test <@ true @>
