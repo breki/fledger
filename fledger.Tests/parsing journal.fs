@@ -14,6 +14,7 @@ open Xunit.Abstractions
 
 let chooseFromRandomJournal () =
     gen {
+        // todo 50: remove randomization of tx info
         let! dateFormat = Arb.from<bool>.Generator
         let! hasStatus = Arb.from<bool>.Generator
         let! hasDescription = Arb.from<bool>.Generator
@@ -119,12 +120,7 @@ type JournalParsingTests(output: ITestOutputHelper) =
         let arbJournal =
             chooseFromRandomJournal () |> Arb.fromGen
 
-        let transactionIsParsedCorrectly
-            (
-                _,
-                expectedTransaction,
-                parserResult
-            ) =
+        let journalIsParsedCorrectly (_, expectedTransaction, parserResult) =
             match parserResult with
             | Success (parsedTransaction, _, _) ->
                 output.WriteLine "PARSING SUCCESS"
@@ -133,6 +129,6 @@ type JournalParsingTests(output: ITestOutputHelper) =
                 output.WriteLine $"PARSING ERROR: {errorMsg}"
                 false
 
-        transactionIsParsedCorrectly
+        journalIsParsedCorrectly
         |> Prop.forAll arbJournal
         |> Check.QuickThrowOnFailure

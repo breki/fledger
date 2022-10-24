@@ -4,6 +4,8 @@
 open System
 open Xunit
 open FsCheck
+open FParsec
+open Text
 
 open Xunit.Abstractions
 
@@ -12,9 +14,72 @@ open fledger.ParsingTransactions
 open fledger.Tests.ParsingUtils
 
 
+let chooseArbitraryTxFirstLine () =
+    gen {
+        let! dateFormat = Arb.from<bool>.Generator
+        let! hasWhitespaceAfterDate = Arb.from<bool>.Generator
+        let! statusChar = Gen.elements [ "!"; "*"; "" ]
+        let! hasDescription = Arb.from<bool>.Generator
+        let! hasComment = Arb.from<bool>.Generator
+
+        let txString =
+            buildString ()
+            |> ifDo dateFormat (fun x -> x |> append "2022/01/06")
+            |> ifDont dateFormat (fun x -> x |> append "2022-01-06")
+            |> ifDo hasWhitespaceAfterDate (fun x -> x |> append " ")
+            |> append statusChar
+            |> ifDo hasDescription (fun x -> x |> append "s.p. prispevki ")
+            |> ifDo hasComment (fun x -> x |> append "; this is a comment ")
+            |> toString
+
+        let expectedTxInfo =
+            { Date = DateTime(2022, 1, 6)
+              Status =
+                match statusChar with
+                | "!" -> TransactionStatus.Pending
+                | "*" -> TransactionStatus.Cleared
+                | _ -> TransactionStatus.Unmarked
+              Description =
+                if hasDescription then
+                    Some "s.p. prispevki"
+                else
+                    None
+              Payee = None
+              Note = None
+              Comment =
+                if hasComment then
+                    Some "this is a comment"
+                else
+                    None }
+
+        let result =
+            runParserOnString pTxFirstLine () "test stream" txString
+
+        return txString, expectedTxInfo, result
+    }
+
 // todo 30: randomize parsing of transaction first line instead of
 //   the whole journal
 type TxFirstLineParsingTests(output: ITestOutputHelper) =
+    [<Fact>]
+    member this.``parsing transaction's first line``() =
+        let arbTxInfo =
+            chooseArbitraryTxFirstLine () |> Arb.fromGen
+
+        let transactionIsParsedCorrectly (_, expectedValue, parserResult) =
+            match parserResult with
+            | Success (parsedValue, _, _) ->
+                // output.WriteLine "PARSING SUCCESS"
+                parsedValue = expectedValue
+            | Failure (errorMsg, _, _) ->
+                output.WriteLine $"PARSING ERROR: {errorMsg}"
+                false
+
+        transactionIsParsedCorrectly
+        |> Prop.forAll arbTxInfo
+        |> Check.QuickThrowOnFailure
+
+    // todo 45: remove these tests once we have the property test
     [<Fact>]
     member this.``parsing transaction info with description and comment``() =
         let text =
