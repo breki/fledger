@@ -12,17 +12,13 @@ open FsCheck
 open FParsec
 open Xunit.Abstractions
 
-// todo 5: start writing tests for individual parsers
-// todo 10: finish implementing support for default commodity declaration
-// todo 20: support for payee and note (pipe characters)
-
-let chooseFromRandomJournal (output: ITestOutputHelper) =
+let chooseFromRandomJournal () =
     gen {
         let! dateFormat = Arb.from<bool>.Generator
-        let hasStatus = false // Arb.from<bool>.Generator
-        let hasDescription = false // Arb.from<bool>.Generator
-        let hasComment = false //Arb.from<bool>.Generator
-        let hasEmptyLinesBetweenTxs = false //= Arb.from<bool>.Generator
+        let! hasStatus = Arb.from<bool>.Generator
+        let! hasDescription = Arb.from<bool>.Generator
+        let! hasComment = Arb.from<bool>.Generator
+        let! hasEmptyLinesBetweenTxs = Arb.from<bool>.Generator
         let! txCount = Gen.choose (0, 3)
 
         let defaultCommodityString =
@@ -103,7 +99,7 @@ let chooseFromRandomJournal (output: ITestOutputHelper) =
                 :: (Enumerable.Repeat(Transaction expectedTransaction, txCount)
                     |> Seq.toList) }
 
-        let userState = { Output = output }
+        let userState = { Something = 0 }
 
         let result =
             runParserOnString
@@ -119,7 +115,7 @@ type JournalParsingTests(output: ITestOutputHelper) =
     [<Fact>]
     member this.``parsing journal``() =
         let arbJournal =
-            chooseFromRandomJournal output |> Arb.fromGen
+            chooseFromRandomJournal () |> Arb.fromGen
 
         let transactionIsParsedCorrectly
             (

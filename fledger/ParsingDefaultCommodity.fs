@@ -7,7 +7,7 @@ open fledger.ParsingBasics
 open fledger.ParsingAmounts
 
 // default commodity = "D", amount
-let pDefaultCommodity: Parser<JournalItem, UserState> =
+let pDefaultCommodity<'T> : Parser<JournalItem, 'T> =
     pstring "D" >>. whitespace1 >>. pAmount
     .>> whitespace
     .>> newlineOrEof

@@ -93,7 +93,7 @@ type FParsecExplorationTests(output: ITestOutputHelper) =
         let result =
             runParserOnString
                 pJournal
-                { Output = output }
+                { Something = 0 }
                 "test stream"
                 @"
 2022/01/06!

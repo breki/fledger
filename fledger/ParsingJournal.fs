@@ -8,13 +8,13 @@ open fledger.ParsingDefaultCommodity
 open fledger.ParsingTransactions
 
 
-let pJournalItem: Parser<JournalItem option, UserState> =
+let pJournalItem<'T> : Parser<JournalItem option, 'T> =
     (pTx |>> Transaction |>> Some)
     <|> (pDefaultCommodity |>> Some)
     <|> (pEmptyLine |>> fun _ -> None)
     <??> "journal item"
 
-let pJournal: Parser<Journal, UserState> =
+let pJournal<'T> : Parser<Journal, 'T> =
     many pJournalItem .>> eof
     |>> fun items ->
             let actualItems = filterOutNone items

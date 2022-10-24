@@ -9,32 +9,32 @@ open fledger.Journal
 open fledger.ParsingBasics
 
 // number sign = ["+" | "-"]
-let pSign =
+let pSign<'T> : Parser<string, 'T> =
     (pchar '+' |>> fun _ -> "+")
     <|> (pchar '-' |>> fun _ -> "-")
     <|>% ""
     <??> "sign"
 
 // thousands digits = ",", digit, digit, digit
-let pThousandsDigits =
+let pThousandsDigits<'T> : Parser<string, 'T> =
     pchar ',' >>. parray 3 digit
     |>> fun digits -> digits |> String
     <??> "thousands digits"
 
 // digits many = {digit}
-let pDigitsMany: Parser<string, UserState> =
+let pDigitsMany<'T> : Parser<string, 'T> =
     many digit
     |>> fun digits -> digits |> List.toArray |> String
     <??> "digits 0 or more"
 
 // digits many 1 = digit, {digit}
-let pDigitsMany1 =
+let pDigitsMany1<'T> : Parser<string, 'T> =
     many1 digit
     |>> fun digits -> digits |> List.toArray |> String
     <??> "digits 1 or more"
 
 // thousands part = [digits many 1], {thousands digits}
-let pThousandsPart =
+let pThousandsPart<'T> : Parser<string, 'T> =
     pDigitsMany1 .>>. many1 pThousandsDigits
     |>> fun (digits, thousandsParts) ->
             let thousandsStr =
@@ -43,17 +43,17 @@ let pThousandsPart =
             digits + thousandsStr
     <??> "thousands part"
 
-let pIntegerPart =
+let pIntegerPart<'T> : Parser<string, 'T> =
     (attempt pThousandsPart) <|> pDigitsMany
     <??> "integer part"
 
 // decimal part = ".", {digit}
-let pDecimalPart =
+let pDecimalPart<'T> : Parser<string, 'T> =
     pchar '.' >>. pDigitsMany <??> "decimal part"
     |>> (fun digits -> "." + digits)
 
 // number = [number sign], thousands part | digits many, [decimal part]
-let numberLiteral2 =
+let numberLiteral2<'T> : Parser<string, 'T> =
     pipe3
         pSign
         pIntegerPart
@@ -64,21 +64,21 @@ let numberLiteral2 =
             | None -> sign + integerPart)
     <??> "number"
 
-let pAmountValue =
+let pAmountValue<'T> : Parser<decimal, 'T> =
     numberLiteral2
     |>> (fun num -> Decimal.Parse(num, CultureInfo.InvariantCulture))
     <??> "amount value"
 
 let pCurrencyChar = letter
 
-let pCurrency: Parser<string, UserState> =
+let pCurrency<'T> : Parser<string, 'T> =
     many1Chars pCurrencyChar <??> "currency"
 
-let pAmountCurrency =
+let pAmountCurrency<'T> : Parser<string, 'T> =
     (whitespace1 >>. pCurrency) |> attempt
     <??> "amount currency"
 
-let pAmount: Parser<Amount, UserState> =
+let pAmount<'T> : Parser<Amount, 'T> =
     pipe2 pAmountValue (opt pAmountCurrency) (fun amount currency ->
         match currency with
         | Some currency ->

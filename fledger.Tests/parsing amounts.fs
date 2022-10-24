@@ -18,7 +18,7 @@ open Swensen.Unquote
 
 let testParser parser (output: ITestOutputHelper) text expectedValue =
     let result =
-        runParserOnString parser { Output = output } "test stream" text
+        runParserOnString parser { Something = 0 } "test stream" text
 
     match result with
     | Success (value, _, _) ->
@@ -69,7 +69,6 @@ type AmountsParsingTests(output: ITestOutputHelper) =
     member this.``parsing number literals`` text expectedText =
         testParser numberLiteral2 output text expectedText
 
-    // todo 2: extend this test with more samples
     [<Theory>]
     [<InlineData("123.45", "123.45", null)>]
     [<InlineData("123.45 EUR", "123.45", "EUR")>]

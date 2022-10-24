@@ -3,12 +3,12 @@
 open System
 
 open FParsec
-open Xunit.Abstractions
 
 // Note that adding test output to user state is attempt in despair,
 // since I don't know how to effectively debug/trace the parsing.
 // And currently I even don't know how to use the user state at all.
-type UserState = { Output: ITestOutputHelper }
+// todo 15: do we even need user state?
+type UserState = { Something: int }
 
 let filterOutNone items =
     items
@@ -26,36 +26,37 @@ let trimStringOptional (s: string option) =
 
 let BP (p: Parser<_, _>) stream = p stream // set a breakpoint here
 
-let whitespace: Parser<string, UserState> =
+let whitespace<'T> : Parser<string, 'T> =
     manyChars (pchar ' ' <|> pchar '\t')
     <??> "whitespace"
 
-let whitespace1: Parser<string, UserState> =
+let whitespace1<'T> : Parser<string, 'T> =
     many1Chars (pchar ' ' <|> pchar '\t')
     <??> "whitespace 1"
 
-let newlineOrEof: Parser<unit, UserState> =
+let newlineOrEof<'T> : Parser<unit, 'T> =
     (newline |>> fun _ -> ()) <|> eof
     <??> "newline or eof"
 
-let endOfLineWhitespace: Parser<unit, UserState> =
+let endOfLineWhitespace<'T> : Parser<unit, 'T> =
     whitespace >>. newlineOrEof >>% ()
     <??> "end of line whitespace"
 
-let pEmptyLine =
+let pEmptyLine<'T> : Parser<char, 'T> =
     whitespace >>. newline <??> "empty line"
 
-let pDatePartSeparator: Parser<char, UserState> =
+let pDatePartSeparator<'T> : Parser<char, 'T> =
     pchar '/' <|> pchar '-' <??> "date part separator"
 
-let pYear =
+let pYear<'T> : Parser<int, 'T> =
     pint32 .>> pDatePartSeparator <??> "year"
 
-let pMonth =
+let pMonth<'T> : Parser<int, 'T> =
     pint32 .>> pDatePartSeparator <??> "month"
 
-let pDay = pint32 <??> "day"
+let pDay<'T> : Parser<int, 'T> =
+    pint32 <??> "day"
 
-let pDate =
+let pDate<'T> : Parser<DateTime, 'T> =
     pipe3 pYear pMonth pDay (fun year month day -> DateTime(year, month, day))
     <??> "date"
