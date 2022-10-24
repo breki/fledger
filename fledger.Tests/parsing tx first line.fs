@@ -11,8 +11,21 @@ open Xunit.Abstractions
 
 open fledger.Journal
 open fledger.ParsingTransactions
-open fledger.Tests.ParsingUtils
 
+
+type PayeeNoteSituation =
+    | NoPayee
+    | EmptyPayee
+    | Payee
+    | PayeeEmptyNote
+    | EmptyPayeeNote
+    | EmptyPayeeEmptyNote
+    | Both
+
+type CommentSituation =
+    | NoComment
+    | EmptyComment
+    | Comment
 
 let chooseArbitraryTxFirstLine () =
     gen {
@@ -20,17 +33,34 @@ let chooseArbitraryTxFirstLine () =
         let! hasWhitespaceAfterDate = Arb.from<bool>.Generator
         let! statusChar = Gen.elements [ "!"; "*"; "" ]
         let! hasDescription = Arb.from<bool>.Generator
-        let! hasComment = Arb.from<bool>.Generator
+        let! payeeNote = Arb.from<PayeeNoteSituation>.Generator
+        let! comment = Arb.from<CommentSituation>.Generator
 
-        let txString =
+        let mutable txBuilder =
             buildString ()
             |> ifDo dateFormat (fun x -> x |> append "2022/01/06")
             |> ifDont dateFormat (fun x -> x |> append "2022-01-06")
             |> ifDo hasWhitespaceAfterDate (fun x -> x |> append " ")
             |> append statusChar
             |> ifDo hasDescription (fun x -> x |> append "s.p. prispevki ")
-            |> ifDo hasComment (fun x -> x |> append "; this is a comment ")
-            |> toString
+
+        txBuilder <-
+            match payeeNote with
+            | NoPayee -> txBuilder
+            | EmptyPayee -> txBuilder |> append "|"
+            | Payee -> txBuilder |> append "| Payee"
+            | PayeeEmptyNote -> txBuilder |> append "| Payee |"
+            | EmptyPayeeNote -> txBuilder |> append "| | Note"
+            | EmptyPayeeEmptyNote -> txBuilder |> append "| |"
+            | Both -> txBuilder |> append "| Payee | Note"
+
+        txBuilder <-
+            match comment with
+            | NoComment -> txBuilder
+            | EmptyComment -> txBuilder |> append " ;"
+            | Comment -> txBuilder |> append " ; this is a comment"
+
+        let txString = txBuilder |> toString
 
         let expectedTxInfo =
             { Date = DateTime(2022, 1, 6)
@@ -44,22 +74,28 @@ let chooseArbitraryTxFirstLine () =
                     Some "s.p. prispevki"
                 else
                     None
-              Payee = None
-              Note = None
+              Payee =
+                match payeeNote with
+                | Payee -> Some "Payee"
+                | PayeeEmptyNote -> Some "Payee"
+                | Both -> Some "Payee"
+                | _ -> None
+              Note =
+                match payeeNote with
+                | EmptyPayeeNote -> Some "Note"
+                | Both -> Some "Note"
+                | _ -> None
               Comment =
-                if hasComment then
-                    Some "this is a comment"
-                else
-                    None }
+                match comment with
+                | Comment -> Some "this is a comment"
+                | _ -> None }
 
         let result =
             runParserOnString pTxFirstLine () "test stream" txString
 
-        return txString, expectedTxInfo, result
+        return txBuilder, expectedTxInfo, result
     }
 
-// todo 30: randomize parsing of transaction first line instead of
-//   the whole journal
 type TxFirstLineParsingTests(output: ITestOutputHelper) =
     [<Fact>]
     member this.``parsing transaction's first line``() =
@@ -78,49 +114,3 @@ type TxFirstLineParsingTests(output: ITestOutputHelper) =
         transactionIsParsedCorrectly
         |> Prop.forAll arbTxInfo
         |> Check.QuickThrowOnFailure
-
-    // todo 45: remove these tests once we have the property test
-    [<Fact>]
-    member this.``parsing transaction info with description and comment``() =
-        let text =
-            "2022/01/06 *description ; comment"
-
-        let expectedValue =
-            { Date = DateTime(2022, 1, 6)
-              Status = TransactionStatus.Cleared
-              Description = Some "description"
-              Payee = None
-              Note = None
-              Comment = Some "comment" }
-
-        testParser pTxFirstLine output text expectedValue
-
-    [<Fact>]
-    member this.``parsing transaction info with payee``() =
-        let text =
-            "2022/01/06 *description |Third Wind ; comment"
-
-        let expectedValue =
-            { Date = DateTime(2022, 1, 6)
-              Status = TransactionStatus.Cleared
-              Description = Some "description"
-              Payee = Some "Third Wind"
-              Note = None
-              Comment = Some "comment" }
-
-        testParser pTxFirstLine output text expectedValue
-
-    [<Fact>]
-    member this.``parsing transaction info with payee and note``() =
-        let text =
-            "2022/01/06 *description |Third Wind | this is a note ; comment"
-
-        let expectedValue =
-            { Date = DateTime(2022, 1, 6)
-              Status = TransactionStatus.Cleared
-              Description = Some "description"
-              Payee = Some "Third Wind"
-              Note = Some "this is a note"
-              Comment = Some "comment" }
-
-        testParser pTxFirstLine output text expectedValue
