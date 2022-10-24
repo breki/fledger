@@ -4,10 +4,7 @@ open System
 
 open FParsec
 
-// Note that adding test output to user state is attempt in despair,
-// since I don't know how to effectively debug/trace the parsing.
-// And currently I even don't know how to use the user state at all.
-// todo 15: do we even need user state?
+// This is just a placeholder for the user state, if we need it.
 type UserState = { Something: int }
 
 let filterOutNone items =
