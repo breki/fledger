@@ -69,6 +69,8 @@ let chooseFromRandomJournal () =
                         Some "s.p. prispevki"
                     else
                         None
+                  Payee = None
+                  Note = None
                   Comment =
                     if hasComment then
                         Some "this is a comment"

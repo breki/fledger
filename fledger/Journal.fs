@@ -11,6 +11,8 @@ type TransactionInfo =
     { Date: DateTime
       Status: TransactionStatus
       Description: string option
+      Payee: string option
+      Note: string option
       Comment: string option }
 
 type Amount =

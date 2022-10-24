@@ -11,14 +11,21 @@ open fledger.ParsingAmounts
 let pTxStatus<'T> : Parser<char, 'T> =
     pchar '!' <|> pchar '*' <??> "tx status"
 
-// tx description and comment = [tx description], [";" [tx comment]], end of line
-let pTxDescriptionAndComment<'T> : Parser<string option * string option, 'T> =
-    opt (manyChars (noneOf ";\n"))
+// tx description and comment
+//    = [tx description], ["|", [payee], ["|", [note]]],
+//      [";", [tx comment]], end of line
+let pTxDescriptionAndComment<'T> : Parser<string option * string option * string option * string option, 'T> =
+    opt (manyChars (noneOf "|;\n"))
+    .>>. opt (pstring "|" >>. manyChars (noneOf "|;\n"))
+    .>>. opt (pstring "|" >>. manyChars (noneOf ";\n"))
     .>>. ((pstring ";" >>. opt (restOfLine true))
           <|> opt (restOfLine true))
     <??> "tx description and comment"
-    |>> fun (description, comment) ->
-            (trimStringOptional description, trimStringOptional comment)
+    |>> fun (((description, payee), note), comment) ->
+            (trimStringOptional description,
+             trimStringOptional payee,
+             trimStringOptional note,
+             trimStringOptional comment)
 
 // tx first line = date, [whitespace1], [status character], [whitespace],
 //                 [tx description], [whitespace], [tx comment]
@@ -33,10 +40,12 @@ let pTxFirstLine<'T> : Parser<TransactionInfo, 'T> =
                   | _ -> failwith "invalid transaction state")
     .>> whitespace
     .>>. pTxDescriptionAndComment
-    |>> fun ((date, status), (description, comment)) ->
+    |>> fun ((date, status), (description, payee, note, comment)) ->
             { Date = date
               Status = status
               Description = description
+              Payee = payee
+              Note = note
               Comment = comment }
     <??> "tx first line"
 
@@ -101,7 +110,6 @@ let pPostingLines<'T> : Parser<PostingLine list, 'T> =
     many pPostingLine |>> filterOutNone
     <??> "posting lines"
 
-// todo 20: support for payee and note (pipe characters)
 let pTx<'T> : Parser<Transaction, 'T> =
     pTxFirstLine .>>. pPostingLines
     |>> (fun (info, postings) -> { Info = info; Postings = postings })
