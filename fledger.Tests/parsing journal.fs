@@ -14,11 +14,6 @@ open Xunit.Abstractions
 
 let chooseFromRandomJournal () =
     gen {
-        // todo 50: remove randomization of tx info
-        let! dateFormat = Arb.from<bool>.Generator
-        let! hasStatus = Arb.from<bool>.Generator
-        let! hasDescription = Arb.from<bool>.Generator
-        let! hasComment = Arb.from<bool>.Generator
         let! hasEmptyLinesBetweenTxs = Arb.from<bool>.Generator
         let! txCount = Gen.choose (0, 3)
 
@@ -29,11 +24,7 @@ let chooseFromRandomJournal () =
 
         let txString =
             buildString ()
-            |> ifDo dateFormat (fun x -> x |> append "2022/01/06")
-            |> ifDont dateFormat (fun x -> x |> append "2022-01-06")
-            |> ifDo hasStatus (fun x -> x |> append " *")
-            |> ifDo hasDescription (fun x -> x |> append "s.p. prispevki ")
-            |> ifDo hasComment (fun x -> x |> append "; this is a comment ")
+            |> append "2022/01/06 *s.p. prispevki ; this is a comment "
             |> append
                 @"
   expenses:Business:Service charges    0.39 EUR
@@ -60,23 +51,11 @@ let chooseFromRandomJournal () =
         let expectedTransaction =
             { Info =
                 { Date = DateTime(2022, 1, 6)
-                  Status =
-                    if hasStatus then
-                        TransactionStatus.Cleared
-                    else
-                        TransactionStatus.Unmarked
-                  Description =
-                    if hasDescription then
-                        Some "s.p. prispevki"
-                    else
-                        None
+                  Status = TransactionStatus.Cleared
+                  Description = Some "s.p. prispevki"
                   Payee = None
                   Note = None
-                  Comment =
-                    if hasComment then
-                        Some "this is a comment"
-                    else
-                        None }
+                  Comment = Some "this is a comment" }
               Postings =
                 [ { Account = "expenses:Business:Service charges"
                     Amount = { Value = 0.39m; Currency = Some "EUR" }
