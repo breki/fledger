@@ -12,6 +12,7 @@ open FsCheck
 open FParsec
 open Xunit.Abstractions
 
+// todo 5: start writing tests for individual parsers
 // todo 10: finish implementing support for default commodity declaration
 // todo 20: support for payee and note (pipe characters)
 

@@ -35,7 +35,7 @@ let pDigitsMany1 =
 
 // thousands part = [digits many 1], {thousands digits}
 let pThousandsPart =
-    pDigitsMany1 .>>. parray 1 pThousandsDigits
+    pDigitsMany1 .>>. many1 pThousandsDigits
     |>> fun (digits, thousandsParts) ->
             let thousandsStr =
                 thousandsParts |> String.concat ""
@@ -43,6 +43,9 @@ let pThousandsPart =
             digits + thousandsStr
     <??> "thousands part"
 
+let pIntegerPart =
+    (attempt pThousandsPart) <|> pDigitsMany
+    <??> "integer part"
 
 // decimal part = ".", {digit}
 let pDecimalPart =
@@ -53,9 +56,12 @@ let pDecimalPart =
 let numberLiteral2 =
     pipe3
         pSign
-        (pThousandsPart <|> pDigitsMany)
-        pDecimalPart
-        (fun sign integerPart decimalPart -> sign + integerPart + decimalPart)
+        pIntegerPart
+        (opt pDecimalPart)
+        (fun sign integerPart decimalPart ->
+            match decimalPart with
+            | Some decimalPart -> sign + integerPart + decimalPart
+            | None -> sign + integerPart)
     <??> "number"
 
 let pAmountValue =
