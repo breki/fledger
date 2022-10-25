@@ -1,6 +1,5 @@
 ﻿module fledger.Journal
 
-// todo 30: add "directive" to all the types that represent directives
 open System
 
 type TransactionStatus =
@@ -26,11 +25,11 @@ type PostingLine =
       TotalPrice: Amount option
       ExpectedBalance: Amount option }
 
-type Transaction =
+type TransactionDirective =
     { Info: TransactionInfo
       Postings: PostingLine list }
 
-type MarketPrice =
+type MarketPriceDirective =
     { Date: DateTime
       Commodity: string
       Price: Amount }
@@ -44,7 +43,7 @@ type JournalItem =
     | Comment of string
     | Commodity of string
     | DefaultCommodity of Amount
-    | MarketPrice of MarketPrice
-    | Transaction of Transaction
+    | MarketPrice of MarketPriceDirective
+    | Transaction of TransactionDirective
 
 type Journal = { Items: JournalItem list }

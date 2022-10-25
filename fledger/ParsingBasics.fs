@@ -4,6 +4,8 @@ open System
 
 open FParsec
 
+// todo 10: move the parse modules to a separate parsing supermodule
+
 // This is just a placeholder for the user state, if we need it.
 type UserState = { Something: int }
 

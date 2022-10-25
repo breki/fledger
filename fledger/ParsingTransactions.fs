@@ -101,7 +101,7 @@ let pPostingLines<'T> : Parser<PostingLine list, 'T> =
     many pPostingLine |>> filterOutNone
     <??> "posting lines"
 
-let pTx<'T> : Parser<Transaction, 'T> =
+let pTx<'T> : Parser<TransactionDirective, 'T> =
     pTxFirstLine .>>. pPostingLines
     |>> (fun (info, postings) -> { Info = info; Postings = postings })
     <??> "tx"

@@ -11,8 +11,6 @@ open fledger.ParsingDefaultCommodityDirective
 open fledger.ParsingMarketPriceDirective
 open fledger.ParsingTransactions
 
-// todo 110: add a test to parse my own ledger file
-
 let pJournalItem<'T> : Parser<JournalItem option, 'T> =
     (pTx |>> Transaction |>> Some)
     <|> (pComment |>> Some)
