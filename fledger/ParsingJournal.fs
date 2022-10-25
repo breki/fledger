@@ -9,9 +9,9 @@ open fledger.ParsingDefaultCommodityDirective
 open fledger.ParsingMarketPriceDirective
 open fledger.ParsingTransactions
 
-// todo 40: add support for "P 2018-11-01 CAD 0.671 EUR" directives
 // todo 70: add support for account directives
 // todo 100: add support for account directives
+// todo 110: add a test to parse my own ledger file
 
 let pJournalItem<'T> : Parser<JournalItem option, 'T> =
     (pTx |>> Transaction |>> Some)

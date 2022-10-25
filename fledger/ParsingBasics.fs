@@ -57,3 +57,12 @@ let pDay<'T> : Parser<int, 'T> =
 let pDate<'T> : Parser<DateTime, 'T> =
     pipe3 pYear pMonth pDay (fun year month day -> DateTime(year, month, day))
     <??> "date"
+
+let pAccountChar<'T> : Parser<char, 'T> =
+    choice [ letter
+             digit
+             pchar ':'
+             pchar '-'
+             pchar '_'
+             pchar ' ' ]
+    <??> "account name character "

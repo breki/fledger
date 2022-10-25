@@ -1,5 +1,6 @@
 ﻿module fledger.Journal
 
+// todo 30: add "directive" to all the types that represent directives
 open System
 
 type TransactionStatus =
@@ -34,7 +35,10 @@ type MarketPrice =
       Commodity: string
       Price: Amount }
 
+type AccountDirective = { AccountName: string }
+
 type JournalItem =
+    | Account of AccountDirective
     | Commodity of string
     | DefaultCommodity of Amount
     | MarketPrice of MarketPrice

@@ -49,25 +49,17 @@ let pTxFirstLine<'T> : Parser<TransactionInfo, 'T> =
               Comment = comment }
     <??> "tx first line"
 
-let pAccountChar<'T> : Parser<char, 'T> =
-    choice [ letter
-             digit
-             pchar ':'
-             pchar '-'
-             pchar '_'
-             pchar ' ' ]
-    <??> "account name character "
-
 let pAmountSeparator<'T> : Parser<string, 'T> =
     (pstring " " .>> (pstring " ") |> attempt
      <??> "amount separator")
 
-let pAccount<'T> : Parser<string, 'T> =
+let pAccountNameInTx<'T> : Parser<string, 'T> =
     many1CharsTill pAccountChar pAmountSeparator
     <??> "account name"
 
-let pAccountRef<'T> : Parser<string, 'T> =
-    pAccount .>> whitespace <??> "account reference"
+let pAccountRefInTx<'T> : Parser<string, 'T> =
+    pAccountNameInTx .>> whitespace
+    <??> "account reference"
 
 let pTotalPriceIndicator<'T> : Parser<unit, 'T> =
     pstring "@@" >>% ()
@@ -88,7 +80,7 @@ let pExpectedBalance<'T> : Parser<Amount, 'T> =
     <??> "expected balance"
 
 let pPostingLineActual<'T> : Parser<PostingLine option, 'T> =
-    whitespace1 >>. pAccountRef
+    whitespace1 >>. pAccountRefInTx
     .>>. pAmount
     .>>. (opt pTotalPrice)
     .>>. (opt pExpectedBalance)
