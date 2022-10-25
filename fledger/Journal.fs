@@ -31,6 +31,7 @@ type Transaction =
 
 type JournalItem =
     | Transaction of Transaction
+    | Commodity of string
     | DefaultCommodity of Amount
 
 type Journal = { Items: JournalItem list }

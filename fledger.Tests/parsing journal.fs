@@ -17,8 +17,11 @@ let chooseFromRandomJournal () =
         let! hasEmptyLinesBetweenTxs = Arb.from<bool>.Generator
         let! txCount = Gen.choose (0, 3)
 
-        let defaultCommodityString =
+        let startingJournalStr =
             @"D 1,000.00 EUR
+        
+commodity EUR
+commodity USD
                 
 "
 
@@ -40,13 +43,15 @@ let chooseFromRandomJournal () =
 
         // construct journalString by appending txString txCount times
         let journalString =
-            defaultCommodityString
+            startingJournalStr
             + String.Concat(Enumerable.Repeat(txString, txCount))
 
-        let expectedDefaultCommodity =
-            { Value = 1000.00m
-              Currency = Some "EUR" }
-            |> DefaultCommodity
+        let expectedStartingItems =
+            [ { Value = 1000.00m
+                Currency = Some "EUR" }
+              |> DefaultCommodity
+              Commodity("EUR")
+              Commodity("USD") ]
 
         let expectedTransaction =
             { Info =
@@ -75,11 +80,12 @@ let chooseFromRandomJournal () =
                           { Value = 132.55m
                             Currency = Some "EUR" } } ] }
 
+        let expectedTransactions =
+            (Enumerable.Repeat(Transaction expectedTransaction, txCount)
+             |> Seq.toList)
+
         let expectedJournal =
-            { Items =
-                expectedDefaultCommodity
-                :: (Enumerable.Repeat(Transaction expectedTransaction, txCount)
-                    |> Seq.toList) }
+            { Items = expectedStartingItems @ expectedTransactions }
 
         let userState = { Something = 0 }
 
