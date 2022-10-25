@@ -1,15 +1,15 @@
-﻿module fledger.ParsingJournal
+﻿module fledger.Parsing.ParsingJournal
 
 open FParsec
 
 open fledger.Journal
-open fledger.ParsingBasics
-open fledger.ParsingAccountDirective
-open fledger.ParsingComment
-open fledger.ParsingCommodityDirective
-open fledger.ParsingDefaultCommodityDirective
-open fledger.ParsingMarketPriceDirective
-open fledger.ParsingTransactions
+open fledger.Parsing.ParsingBasics
+open fledger.Parsing.ParsingAccountDirective
+open fledger.Parsing.ParsingComment
+open fledger.Parsing.ParsingCommodityDirective
+open fledger.Parsing.ParsingDefaultCommodityDirective
+open fledger.Parsing.ParsingMarketPriceDirective
+open fledger.Parsing.ParsingTransactions
 
 let pJournalItem<'T> : Parser<JournalItem option, 'T> =
     (pTx |>> Transaction |>> Some)

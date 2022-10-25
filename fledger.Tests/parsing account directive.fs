@@ -10,7 +10,7 @@ open Text
 open Xunit.Abstractions
 
 open fledger.Journal
-open fledger.ParsingAccountDirective
+open fledger.Parsing.ParsingAccountDirective
 
 let chooseArbitraryAccountDirective () =
     gen {

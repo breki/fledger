@@ -8,15 +8,15 @@
     <ItemGroup>
       <Compile Include="Text.fs" />
       <Compile Include="Journal.fs" />
-      <Compile Include="ParsingBasics.fs" />
-      <Compile Include="ParsingComment.fs" />
-      <Compile Include="ParsingAmounts.fs" />
-      <Compile Include="ParsingCommodityDirective.fs" />
-      <Compile Include="ParsingDefaultCommodityDirective.fs" />
-      <Compile Include="ParsingAccountDirective.fs" />
-      <Compile Include="ParsingMarketPriceDirective.fs" />
-      <Compile Include="ParsingTransactions.fs" />
-      <Compile Include="ParsingJournal.fs" />
+      <Compile Include="Parsing\ParsingBasics.fs" />
+      <Compile Include="Parsing\ParsingComment.fs" />
+      <Compile Include="Parsing\ParsingAmounts.fs" />
+      <Compile Include="Parsing\ParsingCommodityDirective.fs" />
+      <Compile Include="Parsing\ParsingDefaultCommodityDirective.fs" />
+      <Compile Include="Parsing\ParsingAccountDirective.fs" />
+      <Compile Include="Parsing\ParsingMarketPriceDirective.fs" />
+      <Compile Include="Parsing\ParsingTransactions.fs" />
+      <Compile Include="Parsing\ParsingJournal.fs" />
     </ItemGroup>
 
     <ItemGroup>

@@ -1,4 +1,4 @@
-﻿module fledger.ParsingAmounts
+﻿module fledger.Parsing.ParsingAmounts
 
 open System
 
@@ -6,7 +6,7 @@ open System.Globalization
 open FParsec
 
 open fledger.Journal
-open fledger.ParsingBasics
+open fledger.Parsing.ParsingBasics
 
 // number sign = ["+" | "-"]
 let pSign<'T> : Parser<string, 'T> =

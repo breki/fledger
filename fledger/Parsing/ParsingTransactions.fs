@@ -1,11 +1,11 @@
-﻿module fledger.ParsingTransactions
+﻿module fledger.Parsing.ParsingTransactions
 
 
 open FParsec
 
 open fledger.Journal
-open fledger.ParsingBasics
-open fledger.ParsingAmounts
+open fledger.Parsing.ParsingBasics
+open fledger.Parsing.ParsingAmounts
 
 // status character = "!" | "*"
 let pTxStatus<'T> : Parser<char, 'T> =

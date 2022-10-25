@@ -10,7 +10,7 @@ open Text
 open Xunit.Abstractions
 
 open fledger.Journal
-open fledger.ParsingTransactions
+open fledger.Parsing.ParsingTransactions
 
 
 type PayeeNoteSituation =

@@ -10,7 +10,7 @@ open Text
 open Xunit.Abstractions
 
 open fledger.Journal
-open fledger.ParsingTransactions
+open fledger.Parsing.ParsingTransactions
 
 //     assets:current assets:PayPal       110.47 CAD =1.270,99 CAD
 

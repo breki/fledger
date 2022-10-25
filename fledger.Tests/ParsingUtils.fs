@@ -5,7 +5,7 @@ open FsCheck
 open FParsec
 open Xunit.Abstractions
 
-open fledger.ParsingBasics
+open fledger.Parsing.ParsingBasics
 
 open Swensen.Unquote
 

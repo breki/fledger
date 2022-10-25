@@ -1,4 +1,4 @@
-﻿module fledger.ParsingComment
+﻿module fledger.Parsing.ParsingComment
 
 open FParsec
 

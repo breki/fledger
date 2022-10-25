@@ -1,10 +1,10 @@
-﻿module fledger.ParsingMarketPriceDirective
+﻿module fledger.Parsing.ParsingMarketPriceDirective
 
 open FParsec
 
 open fledger.Journal
-open fledger.ParsingBasics
-open fledger.ParsingAmounts
+open fledger.Parsing.ParsingBasics
+open fledger.Parsing.ParsingAmounts
 
 // market price
 //   = "P", whitespace1, date, whitespace1, commodity, whitespace1, amount

@@ -8,8 +8,8 @@ open FParsec
 
 open Xunit.Abstractions
 
-open fledger.ParsingBasics
-open fledger.ParsingJournal
+open fledger.Parsing.ParsingBasics
+open fledger.Parsing.ParsingJournal
 
 open Swensen.Unquote
 

@@ -1,10 +1,10 @@
-﻿module fledger.ParsingDefaultCommodityDirective
+﻿module fledger.Parsing.ParsingDefaultCommodityDirective
 
 open FParsec
 
 open fledger.Journal
-open fledger.ParsingBasics
-open fledger.ParsingAmounts
+open fledger.Parsing.ParsingBasics
+open fledger.Parsing.ParsingAmounts
 
 // default commodity = "D", amount
 let pDefaultCommodity<'T> : Parser<JournalItem, 'T> =

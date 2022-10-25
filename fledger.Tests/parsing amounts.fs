@@ -9,7 +9,7 @@ open FsCheck
 open Xunit.Abstractions
 
 open fledger.Journal
-open fledger.ParsingAmounts
+open fledger.Parsing.ParsingAmounts
 open fledger.Tests.ParsingUtils
 
 

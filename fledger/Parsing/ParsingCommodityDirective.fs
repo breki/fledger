@@ -1,10 +1,10 @@
-﻿module fledger.ParsingCommodityDirective
+﻿module fledger.Parsing.ParsingCommodityDirective
 
 open FParsec
 
 open fledger.Journal
-open fledger.ParsingBasics
-open fledger.ParsingAmounts
+open fledger.Parsing.ParsingBasics
+open fledger.Parsing.ParsingAmounts
 
 // commodity = "commodity", whitespace1, commodity symbol
 let pCommodityDirective<'T> : Parser<JournalItem, 'T> =

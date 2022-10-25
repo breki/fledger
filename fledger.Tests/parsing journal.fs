@@ -1,7 +1,8 @@
 ﻿module fledger.``parsing journal``
 
 open System.Linq
-open fledger.ParsingBasics
+open fledger.Parsing.ParsingBasics
+open fledger.Parsing.ParsingJournal
 open fledger.Journal
 open Text
 
@@ -111,11 +112,7 @@ account assets:current assets:NLB
         let userState = { Something = 0 }
 
         let result =
-            runParserOnString
-                ParsingJournal.pJournal
-                userState
-                "test stream"
-                journalString
+            runParserOnString pJournal userState "test stream" journalString
 
         return journalString, expectedJournal, result
     }

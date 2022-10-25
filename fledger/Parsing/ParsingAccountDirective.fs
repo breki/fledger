@@ -1,10 +1,10 @@
-﻿module fledger.ParsingAccountDirective
+﻿module fledger.Parsing.ParsingAccountDirective
 
 open FParsec
 
 
 open fledger.Journal
-open fledger.ParsingBasics
+open fledger.Parsing.ParsingBasics
 
 let pAccountNameInDirective<'T> : Parser<string, 'T> =
     many1CharsTill pAccountChar newlineOrEof

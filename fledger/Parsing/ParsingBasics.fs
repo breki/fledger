@@ -1,4 +1,4 @@
-﻿module fledger.ParsingBasics
+﻿module fledger.Parsing.ParsingBasics
 
 open System
 
