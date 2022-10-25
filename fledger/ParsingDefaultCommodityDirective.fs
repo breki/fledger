@@ -1,4 +1,4 @@
-﻿module fledger.ParsingDefaultCommodity
+﻿module fledger.ParsingDefaultCommodityDirective
 
 open FParsec
 

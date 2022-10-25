@@ -22,6 +22,8 @@ let chooseFromRandomJournal () =
         
 commodity EUR
 commodity USD
+
+P 2018-11-01 USD 0.877 EUR
                 
 "
 
@@ -51,7 +53,14 @@ commodity USD
                 Commodity = Some "EUR" }
               |> DefaultCommodity
               Commodity("EUR")
-              Commodity("USD") ]
+              Commodity("USD")
+              MarketPrice(
+                  { Date = DateTime(2018, 11, 1)
+                    Commodity = "USD"
+                    Price =
+                      { Value = 0.877m
+                        Commodity = Some "EUR" } }
+              ) ]
 
         let expectedTransaction =
             { Info =

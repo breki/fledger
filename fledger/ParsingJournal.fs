@@ -5,7 +5,8 @@ open FParsec
 open fledger.Journal
 open fledger.ParsingBasics
 open fledger.ParsingCommodityDirective
-open fledger.ParsingDefaultCommodity
+open fledger.ParsingDefaultCommodityDirective
+open fledger.ParsingMarketPriceDirective
 open fledger.ParsingTransactions
 
 // todo 40: add support for "P 2018-11-01 CAD 0.671 EUR" directives
@@ -16,6 +17,7 @@ let pJournalItem<'T> : Parser<JournalItem option, 'T> =
     (pTx |>> Transaction |>> Some)
     <|> (pCommodityDirective |>> Some)
     <|> (pDefaultCommodity |>> Some)
+    <|> (pMarketPrice |>> Some)
     <|> (pEmptyLine |>> fun _ -> None)
     <??> "journal item"
 

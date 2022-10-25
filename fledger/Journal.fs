@@ -29,9 +29,15 @@ type Transaction =
     { Info: TransactionInfo
       Postings: PostingLine list }
 
+type MarketPrice =
+    { Date: DateTime
+      Commodity: string
+      Price: Amount }
+
 type JournalItem =
-    | Transaction of Transaction
     | Commodity of string
     | DefaultCommodity of Amount
+    | MarketPrice of MarketPrice
+    | Transaction of Transaction
 
 type Journal = { Items: JournalItem list }

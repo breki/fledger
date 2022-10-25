@@ -11,7 +11,8 @@
       <Compile Include="ParsingBasics.fs" />
       <Compile Include="ParsingAmounts.fs" />
       <Compile Include="ParsingCommodityDirective.fs" />
-      <Compile Include="ParsingDefaultCommodity.fs" />
+      <Compile Include="ParsingDefaultCommodityDirective.fs" />
+      <Compile Include="ParsingMarketPriceDirective.fs" />
       <Compile Include="ParsingTransactions.fs" />
       <Compile Include="ParsingJournal.fs" />
     </ItemGroup>

@@ -69,7 +69,6 @@ let pAmountValue<'T> : Parser<decimal, 'T> =
     |>> (fun num -> Decimal.Parse(num, CultureInfo.InvariantCulture))
     <??> "amount value"
 
-// todo 10: rename "currency" to "commodity"
 let pCommodityChar = letter
 
 let pCommodity<'T> : Parser<string, 'T> =
