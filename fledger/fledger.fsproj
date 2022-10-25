@@ -12,6 +12,7 @@
       <Compile Include="ParsingAmounts.fs" />
       <Compile Include="ParsingCommodityDirective.fs" />
       <Compile Include="ParsingDefaultCommodityDirective.fs" />
+      <Compile Include="ParsingAccountDirective.fs" />
       <Compile Include="ParsingMarketPriceDirective.fs" />
       <Compile Include="ParsingTransactions.fs" />
       <Compile Include="ParsingJournal.fs" />

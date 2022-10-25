@@ -35,7 +35,9 @@ type MarketPrice =
       Commodity: string
       Price: Amount }
 
-type AccountDirective = { AccountName: string }
+type AccountDirective =
+    { AccountName: string
+      Subdirectives: string list }
 
 type JournalItem =
     | Account of AccountDirective

@@ -10,27 +10,25 @@ open Text
 open Xunit.Abstractions
 
 open fledger.Journal
-open fledger.ParsingBasics
-
-let pAccountNameInDirective<'T> : Parser<string, 'T> =
-    many1CharsTill pAccountChar newlineOrEof
-    <??> "account name"
-
-let pAccountDirective =
-    pstring "account" .>> whitespace1
-    >>. pAccountNameInDirective
-    |>> (fun name -> { AccountName = name } |> Account)
+open fledger.ParsingAccountDirective
 
 let chooseArbitraryAccountDirective () =
     gen {
         let mutable textBuilder =
             buildString ()
-            |> append "account assets:current assets:Revolut"
+            |> appendLine "account assets:current assets:Revolut"
+            |> appendLine ""
+            |> appendLine "  note  (type: BANK)  "
+            |> appendLine " note  (type: BANK)"
+            |> appendLine ""
 
         let text = textBuilder |> toString
 
         let expectedValue =
-            { AccountName = "assets:current assets:Revolut" }
+            { AccountName = "assets:current assets:Revolut"
+              Subdirectives =
+                [ "note  (type: BANK)"
+                  "note  (type: BANK)" ] }
             |> Account
 
         let result =

@@ -25,6 +25,9 @@ commodity USD
 
 P 2018-11-01 USD 0.877 EUR
                 
+account assets:current assets:NLB
+  note  (type: BANK)
+
 "
 
         let txString =
@@ -60,6 +63,10 @@ P 2018-11-01 USD 0.877 EUR
                     Price =
                       { Value = 0.877m
                         Commodity = Some "EUR" } }
+              )
+              Account(
+                  { AccountName = "assets:current assets:NLB"
+                    Subdirectives = [ "note  (type: BANK)" ] }
               ) ]
 
         let expectedTransaction =
