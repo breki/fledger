@@ -41,6 +41,7 @@ type AccountDirective =
 
 type JournalItem =
     | Account of AccountDirective
+    | Comment of string
     | Commodity of string
     | DefaultCommodity of Amount
     | MarketPrice of MarketPrice

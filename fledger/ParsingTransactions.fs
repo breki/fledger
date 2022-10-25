@@ -73,8 +73,7 @@ let pTotalPrice<'T> : Parser<Amount, 'T> =
     <??> "total price"
 
 let pExpectedBalance<'T> : Parser<Amount, 'T> =
-    (pchar ' ' >>. whitespace1 >>? (pstring "=")
-     .>> whitespace1
+    (whitespace >>? (pstring "=") .>> whitespace
      >>. pAmount)
     |> attempt
     <??> "expected balance"

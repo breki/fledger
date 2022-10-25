@@ -64,5 +64,6 @@ let pAccountChar<'T> : Parser<char, 'T> =
              pchar ':'
              pchar '-'
              pchar '_'
+             pchar '/'
              pchar ' ' ]
     <??> "account name character "

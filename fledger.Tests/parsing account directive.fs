@@ -16,7 +16,7 @@ let chooseArbitraryAccountDirective () =
     gen {
         let mutable textBuilder =
             buildString ()
-            |> appendLine "account assets:current assets:Revolut"
+            |> appendLine "account assets:current assets:Revolut/test"
             |> appendLine ""
             |> appendLine "  note  (type: BANK)  "
             |> appendLine " note  (type: BANK)"
@@ -25,7 +25,7 @@ let chooseArbitraryAccountDirective () =
         let text = textBuilder |> toString
 
         let expectedValue =
-            { AccountName = "assets:current assets:Revolut"
+            { AccountName = "assets:current assets:Revolut/test"
               Subdirectives =
                 [ "note  (type: BANK)"
                   "note  (type: BANK)" ] }
