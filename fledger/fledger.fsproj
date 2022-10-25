@@ -17,6 +17,7 @@
       <Compile Include="Parsing\ParsingMarketPriceDirective.fs" />
       <Compile Include="Parsing\ParsingTransactions.fs" />
       <Compile Include="Parsing\ParsingJournal.fs" />
+      <Compile Include="Ledger.fs" />
     </ItemGroup>
 
     <ItemGroup>
