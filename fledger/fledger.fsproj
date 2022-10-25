@@ -18,6 +18,7 @@
       <Compile Include="Parsing\ParsingTransactions.fs" />
       <Compile Include="Parsing\ParsingJournal.fs" />
       <Compile Include="Ledger.fs" />
+      <Compile Include="AccountingFuncs.fs" />
     </ItemGroup>
 
     <ItemGroup>

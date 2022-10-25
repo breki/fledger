@@ -11,6 +11,7 @@ open Xunit.Abstractions
 open fledger.Parsing.ParsingBasics
 open fledger.Parsing.ParsingJournal
 open fledger.Ledger
+open fledger.AccountingFuncs
 
 open Swensen.Unquote
 
@@ -33,6 +34,10 @@ type RealisticJournalParsingTests(output: ITestOutputHelper) =
 
             test <@ ledger.Accounts.Count > 20 @>
             test <@ ledger.Transactions.Length > 1000 @>
+
+            let balances = accountsBalances ledger
+            output.WriteLine(balances.ToString())
+
         | Failure (errorMsg, _, _) ->
             output.WriteLine $"PARSING ERROR: {errorMsg}"
             test <@ false @>
