@@ -17,7 +17,7 @@ type TransactionInfo =
 
 type Amount =
     { Value: Decimal
-      Currency: string option }
+      Commodity: string option }
 
 type PostingLine =
     { Account: string

@@ -69,20 +69,21 @@ let pAmountValue<'T> : Parser<decimal, 'T> =
     |>> (fun num -> Decimal.Parse(num, CultureInfo.InvariantCulture))
     <??> "amount value"
 
-let pCurrencyChar = letter
+// todo 10: rename "currency" to "commodity"
+let pCommodityChar = letter
 
-let pCurrency<'T> : Parser<string, 'T> =
-    many1Chars pCurrencyChar <??> "currency"
+let pCommodity<'T> : Parser<string, 'T> =
+    many1Chars pCommodityChar <??> "commodity"
 
-let pAmountCurrency<'T> : Parser<string, 'T> =
-    (whitespace1 >>. pCurrency) |> attempt
-    <??> "amount currency"
+let pAmountCommodity<'T> : Parser<string, 'T> =
+    (whitespace1 >>. pCommodity) |> attempt
+    <??> "amount commodity"
 
 let pAmount<'T> : Parser<Amount, 'T> =
-    pipe2 pAmountValue (opt pAmountCurrency) (fun amount currency ->
-        match currency with
-        | Some currency ->
+    pipe2 pAmountValue (opt pAmountCommodity) (fun amount commodity ->
+        match commodity with
+        | Some commodity ->
             { Value = amount
-              Currency = Some currency }
-        | None -> { Value = amount; Currency = None })
+              Commodity = Some commodity }
+        | None -> { Value = amount; Commodity = None })
     <??> "amount"

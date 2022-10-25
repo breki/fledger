@@ -48,7 +48,7 @@ commodity USD
 
         let expectedStartingItems =
             [ { Value = 1000.00m
-                Currency = Some "EUR" }
+                Commodity = Some "EUR" }
               |> DefaultCommodity
               Commodity("EUR")
               Commodity("USD") ]
@@ -63,22 +63,27 @@ commodity USD
                   Comment = Some "this is a comment" }
               Postings =
                 [ { Account = "expenses:Business:Service charges"
-                    Amount = { Value = 0.39m; Currency = Some "EUR" }
+                    Amount =
+                      { Value = 0.39m
+                        Commodity = Some "EUR" }
                     TotalPrice = None
                     ExpectedBalance = None }
                   { Account = "expenses:Business:Employment Costs"
-                    Amount = { Value = 4.25m; Currency = None }
-                    TotalPrice = Some { Value = 12.2m; Currency = Some "USD" }
+                    Amount = { Value = 4.25m; Commodity = None }
+                    TotalPrice =
+                      Some
+                          { Value = 12.2m
+                            Commodity = Some "USD" }
                     ExpectedBalance = None }
                   { Account = "assets:current assets:Sparkasse"
                     Amount =
                       { Value = -4.64m
-                        Currency = Some "EUR" }
+                        Commodity = Some "EUR" }
                     TotalPrice = None
                     ExpectedBalance =
                       Some
                           { Value = 132.55m
-                            Currency = Some "EUR" } } ] }
+                            Commodity = Some "EUR" } } ] }
 
         let expectedTransactions =
             (Enumerable.Repeat(Transaction expectedTransaction, txCount)

@@ -6,9 +6,9 @@ open fledger.Journal
 open fledger.ParsingBasics
 open fledger.ParsingAmounts
 
-// commodity = "commodity", whitespace1, currency
+// commodity = "commodity", whitespace1, commodity symbol
 let pCommodityDirective<'T> : Parser<JournalItem, 'T> =
-    pstring "commodity" >>. whitespace1 >>. pCurrency
+    pstring "commodity" >>. whitespace1 >>. pCommodity
     .>> whitespace
     .>> newlineOrEof
     |>> Commodity
