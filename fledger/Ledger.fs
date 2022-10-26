@@ -6,14 +6,13 @@ open fledger.Journal
 // todo 15: Account should also point to its parents and children
 type Account = { Name: AccountName }
 
-// todo 5: rename Amount to JournalAmount and Amount2 to Amount
-type Amount2 = { Value: Decimal; Commodity: string }
+type Amount = { Value: Decimal; Commodity: string }
 
 type Posting =
     { Account: AccountName
-      Amount: Amount2
-      TotalPrice: Amount2 option
-      ExpectedBalance: Amount2 option }
+      Amount: Amount
+      TotalPrice: Amount option
+      ExpectedBalance: Amount option }
 
 type Transaction =
     { Date: DateTime
@@ -31,7 +30,7 @@ type Ledger =
 type MarketPrice2 =
     { Date: DateTime
       Commodity: string
-      Price: Amount2 }
+      Price: Amount }
 
 type LedgerFillingState =
     { Commodities: Set<string>
