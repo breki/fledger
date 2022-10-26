@@ -78,7 +78,7 @@ let pAmountCommodity<'T> : Parser<string, 'T> =
     (whitespace1 >>. pCommodity) |> attempt
     <??> "amount commodity"
 
-let pAmount<'T> : Parser<Amount, 'T> =
+let pAmount<'T> : Parser<JournalAmount, 'T> =
     pipe2 pAmountValue (opt pAmountCommodity) (fun amount commodity ->
         match commodity with
         | Some commodity ->

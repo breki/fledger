@@ -15,7 +15,7 @@ type TransactionInfo =
       Note: string option
       Comment: string option }
 
-type Amount =
+type JournalAmount =
     { Value: Decimal
       Commodity: string option }
 
@@ -23,9 +23,9 @@ type AccountName = string
 
 type PostingLine =
     { Account: AccountName
-      Amount: Amount
-      TotalPrice: Amount option
-      ExpectedBalance: Amount option }
+      Amount: JournalAmount
+      TotalPrice: JournalAmount option
+      ExpectedBalance: JournalAmount option }
 
 type TransactionDirective =
     { Info: TransactionInfo
@@ -34,7 +34,7 @@ type TransactionDirective =
 type MarketPriceDirective =
     { Date: DateTime
       Commodity: string
-      Price: Amount }
+      Price: JournalAmount }
 
 type AccountDirective =
     { AccountName: AccountName
@@ -44,7 +44,7 @@ type JournalItem =
     | Account of AccountDirective
     | Comment of string
     | Commodity of string
-    | DefaultCommodity of Amount
+    | DefaultCommodity of JournalAmount
     | MarketPrice of MarketPriceDirective
     | Transaction of TransactionDirective
 

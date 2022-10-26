@@ -65,14 +65,14 @@ let pTotalPriceIndicator<'T> : Parser<unit, 'T> =
     pstring "@@" >>% ()
     <??> "total price indicator (@@)"
 
-let pTotalPrice<'T> : Parser<Amount, 'T> =
+let pTotalPrice<'T> : Parser<JournalAmount, 'T> =
     (whitespace1 >>? pTotalPriceIndicator
      .>>? whitespace1
      >>. pAmount)
     |> attempt
     <??> "total price"
 
-let pExpectedBalance<'T> : Parser<Amount, 'T> =
+let pExpectedBalance<'T> : Parser<JournalAmount, 'T> =
     (whitespace >>? (pstring "=") .>> whitespace
      >>. pAmount)
     |> attempt

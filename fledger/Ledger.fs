@@ -41,7 +41,7 @@ type LedgerFillingState =
       Transactions: Transaction list }
 
 let fillLedger (journal: Journal) : Ledger =
-    let toLedgerAmount state (amount: Amount) =
+    let toLedgerAmount state (amount: JournalAmount) =
         match amount.Commodity with
         | Some commodity ->
             { Value = amount.Value
