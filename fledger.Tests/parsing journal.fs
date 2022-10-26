@@ -1,6 +1,7 @@
 ﻿module fledger.``parsing journal``
 
 open System.Linq
+open fledger.BasicTypes
 open fledger.Parsing.ParsingBasics
 open fledger.Parsing.ParsingJournal
 open fledger.Journal

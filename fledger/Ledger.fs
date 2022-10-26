@@ -1,6 +1,7 @@
 ﻿module fledger.Ledger
 
 open System
+open fledger.BasicTypes
 open fledger.Journal
 
 // todo 15: Account should also point to its parents and children

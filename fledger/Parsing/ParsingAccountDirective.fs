@@ -3,6 +3,7 @@
 open FParsec
 
 
+open fledger.BasicTypes
 open fledger.Journal
 open fledger.Parsing.ParsingBasics
 

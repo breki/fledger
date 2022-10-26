@@ -1,6 +1,6 @@
 ﻿module fledger.AccountingFuncs
 
-open fledger.Journal
+open fledger.BasicTypes
 open fledger.Ledger
 
 type AccountBalance =

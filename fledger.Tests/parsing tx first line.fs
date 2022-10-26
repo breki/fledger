@@ -9,6 +9,7 @@ open Text
 
 open Xunit.Abstractions
 
+open fledger.BasicTypes
 open fledger.Journal
 open fledger.Parsing.ParsingTransactions
 

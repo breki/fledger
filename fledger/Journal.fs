@@ -2,10 +2,7 @@
 
 open System
 
-type TransactionStatus =
-    | Unmarked
-    | Pending
-    | Cleared
+open fledger.BasicTypes
 
 type TransactionInfo =
     { Date: DateTime
@@ -18,8 +15,6 @@ type TransactionInfo =
 type JournalAmount =
     { Value: Decimal
       Commodity: string option }
-
-type AccountName = string
 
 type PostingLine =
     { Account: AccountName
