@@ -3,8 +3,10 @@
 open System
 open fledger.Journal
 
+// todo 15: Account should also point to its parents and children
 type Account = { Name: string }
 
+// todo 5: rename Amount to JournalAmount and Amount2 to Amount
 type Amount2 = { Value: Decimal; Commodity: string }
 
 type Posting =
