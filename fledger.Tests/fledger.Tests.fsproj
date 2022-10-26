@@ -14,6 +14,7 @@
         <Compile Include="parsing account directive.fs" />
         <Compile Include="parsing journal.fs" />
         <Compile Include="parsing realistic journal.fs" />
+        <Compile Include="Todo.fs" />
     </ItemGroup>
 
     <ItemGroup>

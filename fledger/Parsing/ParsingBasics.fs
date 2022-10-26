@@ -4,9 +4,7 @@ open System
 
 open FParsec
 
-// todo 10: move the parse modules to a separate parsing supermodule
-
-// This is just a placeholder for the user state, if we need it.
+// This is just a placeholder for the user state, if we ever need it.
 type UserState = { Something: int }
 
 let filterOutNone items =
@@ -60,6 +58,7 @@ let pDate<'T> : Parser<DateTime, 'T> =
     pipe3 pYear pMonth pDay (fun year month day -> DateTime(year, month, day))
     <??> "date"
 
+// todo 10: how to structure the account name/reference?
 let pAccountChar<'T> : Parser<char, 'T> =
     choice [ letter
              digit
