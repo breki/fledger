@@ -7,7 +7,13 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <Compile Include="Icebreaker.fs" />
+        <Compile Include="ParsingUtils.fs" />
+        <Compile Include="parsing amounts.fs" />
+        <Compile Include="parsing tx first line.fs" />
+        <Compile Include="parsing tx posting.fs" />
+        <Compile Include="parsing account directive.fs" />
+        <Compile Include="parsing journal.fs" />
+        <Compile Include="parsing realistic journal.fs" />
     </ItemGroup>
 
     <ItemGroup>
