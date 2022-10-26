@@ -67,7 +67,7 @@ account assets:current assets:NLB
                         Commodity = Some "EUR" } }
               )
               Account(
-                  { AccountName = "assets:current assets:NLB"
+                  { Account = "assets:current assets:NLB" |> AccountRef.Create
                     Subdirectives = [ "note  (type: BANK)" ] }
               ) ]
 
@@ -80,20 +80,26 @@ account assets:current assets:NLB
                   Note = None
                   Comment = Some "this is a comment" }
               Postings =
-                [ { Account = "expenses:Business:Service charges"
+                [ { Account =
+                      "expenses:Business:Service charges"
+                      |> AccountRef.Create
                     Amount =
                       { Value = 0.39m
                         Commodity = Some "EUR" }
                     TotalPrice = None
                     ExpectedBalance = None }
-                  { Account = "expenses:Business:Employment Costs"
+                  { Account =
+                      "expenses:Business:Employment Costs"
+                      |> AccountRef.Create
                     Amount = { Value = 4.25m; Commodity = None }
                     TotalPrice =
                       Some
                           { Value = 12.2m
                             Commodity = Some "USD" }
                     ExpectedBalance = None }
-                  { Account = "assets:current assets:Sparkasse"
+                  { Account =
+                      "assets:current assets:Sparkasse"
+                      |> AccountRef.Create
                     Amount =
                       { Value = -4.64m
                         Commodity = Some "EUR" }

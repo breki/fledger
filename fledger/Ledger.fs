@@ -5,12 +5,12 @@ open fledger.BasicTypes
 open fledger.Journal
 
 // todo 15: Account should also point to its parents and children
-type Account = { Name: AccountName }
+type Account = { Name: AccountRef }
 
 type Amount = { Value: Decimal; Commodity: string }
 
 type Posting =
-    { Account: AccountName
+    { Account: AccountRef
       Amount: Amount
       TotalPrice: Amount option
       ExpectedBalance: Amount option }
@@ -25,7 +25,7 @@ type Transaction =
       Postings: Posting list }
 
 type Ledger =
-    { Accounts: Map<AccountName, Account>
+    { Accounts: Map<AccountRef, Account>
       Transactions: Transaction list }
 
 type MarketPrice2 =
@@ -37,7 +37,7 @@ type LedgerFillingState =
     { Commodities: Set<string>
       DefaultCommodity: string option
       MarketPrices: List<MarketPrice2>
-      Accounts: Map<AccountName, Account>
+      Accounts: Map<AccountRef, Account>
       Transactions: Transaction list }
 
 let fillLedger (journal: Journal) : Ledger =
@@ -60,8 +60,8 @@ let fillLedger (journal: Journal) : Ledger =
             { state with
                 Accounts =
                     state.Accounts.Add(
-                        account.AccountName,
-                        { Name = account.AccountName }
+                        account.Account,
+                        { Name = account.Account }
                     ) }
         | Comment _ -> state
         | Commodity commodity ->

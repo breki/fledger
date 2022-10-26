@@ -54,11 +54,12 @@ let pAmountSeparator<'T> : Parser<string, 'T> =
     (pstring " " .>> (pstring " ") |> attempt
      <??> "amount separator")
 
-let pAccountNameInTx<'T> : Parser<AccountName, 'T> =
+let pAccountNameInTx<'T> : Parser<AccountRef, 'T> =
     many1CharsTill pAccountChar pAmountSeparator
+    |>> AccountRef.Create
     <??> "account name"
 
-let pAccountRefInTx<'T> : Parser<AccountName, 'T> =
+let pAccountRefInTx<'T> : Parser<AccountRef, 'T> =
     pAccountNameInTx .>> whitespace
     <??> "account reference"
 

@@ -7,8 +7,9 @@ open fledger.BasicTypes
 open fledger.Journal
 open fledger.Parsing.ParsingBasics
 
-let pAccountNameInDirective<'T> : Parser<AccountName, 'T> =
+let pAccountNameInDirective<'T> : Parser<AccountRef, 'T> =
     many1CharsTill pAccountChar newlineOrEof
+    |>> AccountRef.Create
     <??> "account name"
 
 let pAccountSubdirective<'T> : Parser<AccountName option, 'T> =
@@ -30,6 +31,6 @@ let pAccountDirective<'T> : Parser<JournalItem, 'T> =
     >>. pAccountNameInDirective
     .>>. pAccountSubdirectives
     |>> (fun (accountName, subdirectives) ->
-        { AccountName = accountName
+        { Account = accountName
           Subdirectives = subdirectives }
         |> Account)

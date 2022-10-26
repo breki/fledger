@@ -4,11 +4,11 @@ open fledger.BasicTypes
 open fledger.Ledger
 
 type AccountBalance =
-    { Account: AccountName
+    { Account: AccountRef
       Balance: Map<string, decimal> }
 
 type AccountsBalances =
-    { Balances: Map<AccountName, AccountBalance> }
+    { Balances: Map<AccountRef, AccountBalance> }
 
 let accountsBalances (ledger: Ledger) =
     let processPosting

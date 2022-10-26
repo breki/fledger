@@ -17,7 +17,7 @@ type JournalAmount =
       Commodity: string option }
 
 type PostingLine =
-    { Account: AccountName
+    { Account: AccountRef
       Amount: JournalAmount
       TotalPrice: JournalAmount option
       ExpectedBalance: JournalAmount option }
@@ -32,7 +32,7 @@ type MarketPriceDirective =
       Price: JournalAmount }
 
 type AccountDirective =
-    { AccountName: AccountName
+    { Account: AccountRef
       Subdirectives: string list }
 
 type JournalItem =

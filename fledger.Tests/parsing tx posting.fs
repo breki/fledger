@@ -9,6 +9,7 @@ open Text
 
 open Xunit.Abstractions
 
+open fledger.BasicTypes
 open fledger.Journal
 open fledger.Parsing.ParsingTransactions
 
@@ -25,7 +26,7 @@ let chooseArbitraryPosting () =
         let text = textBuilder |> toString
 
         let expectedValue =
-            { Account = "assets:current assets:NLB"
+            { Account = "assets:current assets:NLB" |> AccountRef.Create
               Amount =
                 { Value = -5.37m
                   Commodity = Some "EUR" }

@@ -9,6 +9,7 @@ open Text
 
 open Xunit.Abstractions
 
+open fledger.BasicTypes
 open fledger.Journal
 open fledger.Parsing.ParsingAccountDirective
 
@@ -25,7 +26,9 @@ let chooseArbitraryAccountDirective () =
         let text = textBuilder |> toString
 
         let expectedValue =
-            { AccountName = "assets:current assets:Revolut/test"
+            { Account =
+                "assets:current assets:Revolut/test"
+                |> AccountRef.Create
               Subdirectives =
                 [ "note  (type: BANK)"
                   "note  (type: BANK)" ] }
