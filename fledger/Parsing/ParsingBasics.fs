@@ -58,7 +58,6 @@ let pDate<'T> : Parser<DateTime, 'T> =
     pipe3 pYear pMonth pDay (fun year month day -> DateTime(year, month, day))
     <??> "date"
 
-// todo 10: create AccountRef type that has the full name and decomposed parts
 let pAccountChar<'T> : Parser<char, 'T> =
     choice [ letter
              digit

@@ -1,8 +1,10 @@
 ﻿module fledger.BasicTypes
 
+open System
+
 type AccountName = string
 
-// todo 12: implement custom equality that just uses the full account name
+[<CustomEquality; CustomComparison>]
 type AccountRef =
     { FullName: AccountName
       NameParts: string [] }
@@ -12,6 +14,25 @@ type AccountRef =
 
         { FullName = fullName
           NameParts = parts }
+
+    interface IEquatable<AccountRef> with
+        member this.Equals other = other.FullName.Equals this.FullName
+
+    override this.Equals other =
+        match other with
+        | :? AccountRef as p -> (this :> IEquatable<_>).Equals p
+        | _ -> false
+
+    override this.GetHashCode() = this.FullName.GetHashCode()
+
+    interface IComparable with
+        member this.CompareTo other =
+            match other with
+            | :? AccountRef as p -> (this :> IComparable<_>).CompareTo p
+            | _ -> -1
+
+    interface IComparable<AccountRef> with
+        member this.CompareTo other = other.FullName.CompareTo this.FullName
 
 type TransactionStatus =
     | Unmarked
