@@ -23,16 +23,16 @@
 
     <ItemGroup>
         <PackageReference Include="FParsec" Version="1.1.1" />
-        <PackageReference Include="FsCheck" Version="2.16.4" />
-        <PackageReference Include="FsCheck.Xunit" Version="2.16.4" />
-        <PackageReference Include="FsUnit.xUnit" Version="4.1.0" />
-        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.0.0" />
+        <PackageReference Include="FsCheck" Version="2.16.5" />
+        <PackageReference Include="FsCheck.Xunit" Version="2.16.5" />
+        <PackageReference Include="FsUnit.xUnit" Version="5.0.5" />
+        <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.3.2" />
         <PackageReference Include="Unquote" Version="6.1.0" />
-        <PackageReference Include="xunit.runner.console" Version="2.4.1">
+        <PackageReference Include="xunit.runner.console" Version="2.4.2">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
-        <PackageReference Include="xunit.runner.visualstudio" Version="2.4.3">
+        <PackageReference Include="xunit.runner.visualstudio" Version="2.4.5">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>

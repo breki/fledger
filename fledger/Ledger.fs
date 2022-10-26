@@ -4,7 +4,6 @@ open System
 open fledger.BasicTypes
 open fledger.Journal
 
-// todo 15: Account should also point to its parents and children
 type Account = { Name: AccountRef }
 
 type Amount = { Value: Decimal; Commodity: string }
