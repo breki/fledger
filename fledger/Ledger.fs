@@ -4,13 +4,13 @@ open System
 open fledger.Journal
 
 // todo 15: Account should also point to its parents and children
-type Account = { Name: string }
+type Account = { Name: AccountName }
 
 // todo 5: rename Amount to JournalAmount and Amount2 to Amount
 type Amount2 = { Value: Decimal; Commodity: string }
 
 type Posting =
-    { Account: string
+    { Account: AccountName
       Amount: Amount2
       TotalPrice: Amount2 option
       ExpectedBalance: Amount2 option }
@@ -25,7 +25,7 @@ type Transaction =
       Postings: Posting list }
 
 type Ledger =
-    { Accounts: Map<string, Account>
+    { Accounts: Map<AccountName, Account>
       Transactions: Transaction list }
 
 type MarketPrice2 =
@@ -37,7 +37,7 @@ type LedgerFillingState =
     { Commodities: Set<string>
       DefaultCommodity: string option
       MarketPrices: List<MarketPrice2>
-      Accounts: Map<string, Account>
+      Accounts: Map<AccountName, Account>
       Transactions: Transaction list }
 
 let fillLedger (journal: Journal) : Ledger =

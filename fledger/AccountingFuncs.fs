@@ -1,13 +1,14 @@
 ﻿module fledger.AccountingFuncs
 
+open fledger.Journal
 open fledger.Ledger
 
 type AccountBalance =
-    { Account: string
+    { Account: AccountName
       Balance: Map<string, decimal> }
 
 type AccountsBalances =
-    { Balances: Map<string, AccountBalance> }
+    { Balances: Map<AccountName, AccountBalance> }
 
 let accountsBalances (ledger: Ledger) =
     let processPosting

@@ -19,8 +19,10 @@ type Amount =
     { Value: Decimal
       Commodity: string option }
 
+type AccountName = string
+
 type PostingLine =
-    { Account: string
+    { Account: AccountName
       Amount: Amount
       TotalPrice: Amount option
       ExpectedBalance: Amount option }
@@ -35,7 +37,7 @@ type MarketPriceDirective =
       Price: Amount }
 
 type AccountDirective =
-    { AccountName: string
+    { AccountName: AccountName
       Subdirectives: string list }
 
 type JournalItem =

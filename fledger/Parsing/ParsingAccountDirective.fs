@@ -6,21 +6,21 @@ open FParsec
 open fledger.Journal
 open fledger.Parsing.ParsingBasics
 
-let pAccountNameInDirective<'T> : Parser<string, 'T> =
+let pAccountNameInDirective<'T> : Parser<AccountName, 'T> =
     many1CharsTill pAccountChar newlineOrEof
     <??> "account name"
 
-let pAccountSubdirective<'T> : Parser<string option, 'T> =
+let pAccountSubdirective<'T> : Parser<AccountName option, 'T> =
     whitespace1 >>. restOfLine true |>> Some
     <??> "account subdirective"
 
-let pAccountSubdirectiveMaybe<'T> : Parser<string option, 'T> =
+let pAccountSubdirectiveMaybe<'T> : Parser<AccountName option, 'T> =
     attempt pAccountSubdirective
     <|> (pEmptyLine >>% None)
     |>> trimStringOptional
     <??> "account subdirective maybe"
 
-let pAccountSubdirectives<'T> : Parser<string list, 'T> =
+let pAccountSubdirectives<'T> : Parser<AccountName list, 'T> =
     many pAccountSubdirectiveMaybe |>> filterOutNone
     <??> "account subdirectives"
 
