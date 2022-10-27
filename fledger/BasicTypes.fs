@@ -4,7 +4,9 @@ open System
 
 type Date = DateTime
 
+type Commodity = string
 type AccountName = string
+
 
 [<CustomEquality; CustomComparison>]
 type AccountRef =

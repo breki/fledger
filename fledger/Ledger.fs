@@ -8,7 +8,7 @@ type Account = { Name: AccountRef }
 
 type Amount =
     { Value: Decimal
-      Commodity: string }
+      Commodity: Commodity }
     override this.ToString() = $"%f{this.Value} %s{this.Commodity}"
 
     static member Zero(commodity: string) =

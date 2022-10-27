@@ -3,7 +3,14 @@
 open fledger.BasicTypes
 open fledger.Ledger
 
-type MultiCommodityBalance = Map<string, Amount>
+type MultiCommodityBalance = Map<Commodity, Amount>
+
+let addMultiCommodityBalances
+    (a: MultiCommodityBalance)
+    (b: MultiCommodityBalance)
+    : MultiCommodityBalance =
+    Map.union (fun amount1 amount2 -> amount1 + amount2) a b
+
 
 type AccountBalance =
     { Account: AccountRef
@@ -81,8 +88,10 @@ let addAmountToBalance
     |> Map.add date (balance |> Map.add commodity newBalance)
 
 
+type BalanceOnDate = Date * MultiCommodityBalance
+
 /// Represents a list of multi-commodity balances, one for each date.
-type BalanceHistory = List<Date * MultiCommodityBalance>
+type BalanceHistory = List<BalanceOnDate>
 
 
 /// Returns the total balance change for each day.
@@ -94,6 +103,8 @@ let totalBalanceChangeHistory (ledger: Ledger) : BalanceHistory =
         : BalanceByDate =
         let date = transaction.Date
 
+        // todo 10: something is wrong with this filter, we have WAGA entries
+        // in the final total balances, but missing a lot of EURs
         match posting.Account.NameParts[0] with
         | "assets" -> addAmountToBalance date posting.Amount balances
         | "liabilities" -> addAmountToBalance date posting.Amount balances
@@ -118,4 +129,19 @@ let totalBalanceChangeHistory (ledger: Ledger) : BalanceHistory =
     |> Seq.toList
 
 
-// todo 15: implement total balance history function
+let absoluteTotalBalanceHistory
+    (totalBalanceHistory: BalanceHistory)
+    : BalanceHistory =
+    let folder
+        ((_, currentTotalBalance): BalanceOnDate)
+        ((date, totalBalanceChangeForDate): BalanceOnDate)
+        : BalanceOnDate =
+        (date,
+         addMultiCommodityBalances currentTotalBalance totalBalanceChangeForDate)
+
+    let emptyBalance =
+        (Date.MinValue, Map.empty)
+
+    totalBalanceHistory
+    // |> List.reduce
+    |> List.scan folder emptyBalance

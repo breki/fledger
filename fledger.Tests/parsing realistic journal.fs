@@ -40,8 +40,12 @@ type RealisticJournalParsingTests(output: ITestOutputHelper) =
 
             let totalBalanceHistory =
                 totalBalanceChangeHistory ledger
+                |> absoluteTotalBalanceHistory
 
-            output.WriteLine $"Total balance history: {totalBalanceHistory}"
+            let finalTotalBalance =
+                totalBalanceHistory |> List.last
+
+            output.WriteLine $"Final total balance: {finalTotalBalance}"
 
         | Failure (errorMsg, _, _) ->
             output.WriteLine $"PARSING ERROR: {errorMsg}"
