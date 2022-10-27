@@ -6,6 +6,7 @@ open fledger.Journal
 
 type Account = { Name: AccountRef }
 
+// todo 5: implement custom ToString()
 type Amount = { Value: Decimal; Commodity: string }
 
 type Posting =
@@ -15,7 +16,7 @@ type Posting =
       ExpectedBalance: Amount option }
 
 type Transaction =
-    { Date: DateTime
+    { Date: Date
       Status: TransactionStatus
       Description: string option
       Payee: string option
@@ -28,7 +29,7 @@ type Ledger =
       Transactions: Transaction list }
 
 type MarketPrice2 =
-    { Date: DateTime
+    { Date: Date
       Commodity: string
       Price: Amount }
 

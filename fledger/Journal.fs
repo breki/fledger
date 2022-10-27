@@ -5,7 +5,7 @@ open System
 open fledger.BasicTypes
 
 type TransactionInfo =
-    { Date: DateTime
+    { Date: Date
       Status: TransactionStatus
       Description: string option
       Payee: string option
@@ -27,7 +27,7 @@ type TransactionDirective =
       Postings: PostingLine list }
 
 type MarketPriceDirective =
-    { Date: DateTime
+    { Date: Date
       Commodity: string
       Price: JournalAmount }
 

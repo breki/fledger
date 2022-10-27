@@ -2,12 +2,14 @@
 
 open System
 
+type Date = DateTime
+
 type AccountName = string
 
 [<CustomEquality; CustomComparison>]
 type AccountRef =
     { FullName: AccountName
-      NameParts: string [] }
+      NameParts: string[] }
 
     static member Create(fullName: string) =
         let parts = fullName.Split(':')

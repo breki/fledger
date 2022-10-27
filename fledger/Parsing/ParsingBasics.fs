@@ -3,6 +3,7 @@
 open System
 
 open FParsec
+open fledger.BasicTypes
 
 // This is just a placeholder for the user state, if we ever need it.
 type UserState = { Something: int }
@@ -54,16 +55,17 @@ let pMonth<'T> : Parser<int, 'T> =
 let pDay<'T> : Parser<int, 'T> =
     pint32 <??> "day"
 
-let pDate<'T> : Parser<DateTime, 'T> =
+let pDate<'T> : Parser<Date, 'T> =
     pipe3 pYear pMonth pDay (fun year month day -> DateTime(year, month, day))
     <??> "date"
 
 let pAccountChar<'T> : Parser<char, 'T> =
-    choice [ letter
-             digit
-             pchar ':'
-             pchar '-'
-             pchar '_'
-             pchar '/'
-             pchar ' ' ]
+    choice
+        [ letter
+          digit
+          pchar ':'
+          pchar '-'
+          pchar '_'
+          pchar '/'
+          pchar ' ' ]
     <??> "account name character "

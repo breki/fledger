@@ -35,8 +35,13 @@ type RealisticJournalParsingTests(output: ITestOutputHelper) =
             test <@ ledger.Accounts.Count > 20 @>
             test <@ ledger.Transactions.Length > 1000 @>
 
-            let balances = accountsBalances ledger
-            output.WriteLine(balances.ToString())
+            let accountBalances =
+                accountsBalances ledger
+
+            let totalBalanceHistory =
+                totalBalanceChangeHistory ledger
+
+            output.WriteLine $"Total balance history: {totalBalanceHistory}"
 
         | Failure (errorMsg, _, _) ->
             output.WriteLine $"PARSING ERROR: {errorMsg}"
