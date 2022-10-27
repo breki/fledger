@@ -40,7 +40,7 @@ type Ledger =
     { Accounts: Map<AccountRef, Account>
       Transactions: Transaction list }
 
-type MarketPrice2 =
+type MarketPrice =
     { Date: Date
       Commodity: string
       Price: Amount }
@@ -48,7 +48,7 @@ type MarketPrice2 =
 type LedgerFillingState =
     { Commodities: Set<string>
       DefaultCommodity: string option
-      MarketPrices: List<MarketPrice2>
+      MarketPrices: List<MarketPrice>
       Accounts: Map<AccountRef, Account>
       Transactions: Transaction list }
 

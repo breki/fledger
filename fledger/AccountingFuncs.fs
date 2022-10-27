@@ -103,8 +103,6 @@ let totalBalanceChangeHistory (ledger: Ledger) : BalanceHistory =
         : BalanceByDate =
         let date = transaction.Date
 
-        // todo 10: something is wrong with this filter, we have WAGA entries
-        // in the final total balances, but missing a lot of EURs
         match posting.Account.NameParts[0] with
         | "assets" -> addAmountToBalance date posting.Amount balances
         | "liabilities" -> addAmountToBalance date posting.Amount balances
@@ -145,3 +143,6 @@ let absoluteTotalBalanceHistory
     totalBalanceHistory
     // |> List.reduce
     |> List.scan folder emptyBalance
+
+// todo 10: implement conversion of other commodities to EUR based on
+// market prices
