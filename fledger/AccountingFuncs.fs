@@ -3,7 +3,7 @@
 open fledger.BasicTypes
 open fledger.Ledger
 
-type MultiCommodityBalance = Map<string, decimal>
+type MultiCommodityBalance = Map<string, Amount>
 
 type AccountBalance =
     { Account: AccountRef
@@ -32,8 +32,8 @@ let accountsBalances (ledger: Ledger) =
         let newCommodityBalance =
             accountBalance.Balance
             |> Map.tryFind commodity
-            |> Option.defaultValue 0m
-            |> (+) amount.Value
+            |> Option.defaultValue (commodity |> Amount.Zero)
+            |> (+) amount
 
         let newAccountBalance =
             { accountBalance with
@@ -55,6 +55,7 @@ let accountsBalances (ledger: Ledger) =
     ledger.Transactions
     |> List.fold processTx initialState
 
+/// Represents a map of multi-commodity balances, indexed by the date.
 type BalanceByDate = Map<Date, MultiCommodityBalance>
 
 /// Adds an amount to the balance-by-date structure.
@@ -64,7 +65,6 @@ let addAmountToBalance
     (balances: BalanceByDate)
     : BalanceByDate =
     let commodity = amount.Commodity
-    let value = amount.Value
 
     let balance =
         balances
@@ -74,17 +74,17 @@ let addAmountToBalance
     let newBalance =
         balance
         |> Map.tryFind commodity
-        |> Option.defaultValue 0m
-        |> (+) value
+        |> Option.defaultValue (commodity |> Amount.Zero)
+        |> (+) amount
 
     balances
     |> Map.add date (balance |> Map.add commodity newBalance)
 
 
+/// Represents a list of multi-commodity balances, one for each date.
 type BalanceHistory = List<Date * MultiCommodityBalance>
 
 
-// todo 10: this function should return dates sorted
 /// Returns the total balance change for each day.
 let totalBalanceChangeHistory (ledger: Ledger) : BalanceHistory =
     let processPosting

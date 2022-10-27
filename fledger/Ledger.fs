@@ -6,8 +6,20 @@ open fledger.Journal
 
 type Account = { Name: AccountRef }
 
-// todo 5: implement custom ToString()
-type Amount = { Value: Decimal; Commodity: string }
+type Amount =
+    { Value: Decimal
+      Commodity: string }
+    override this.ToString() = $"%f{this.Value} %s{this.Commodity}"
+
+    static member Zero(commodity: string) =
+        { Value = 0.0M; Commodity = commodity }
+
+    static member (+)(a: Amount, b: Amount) =
+        if a.Commodity <> b.Commodity then
+            failwith "Cannot add amounts of different commodities"
+
+        { Value = a.Value + b.Value
+          Commodity = a.Commodity }
 
 type Posting =
     { Account: AccountRef
