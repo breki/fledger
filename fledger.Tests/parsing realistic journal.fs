@@ -45,7 +45,16 @@ type RealisticJournalParsingTests(output: ITestOutputHelper) =
             let finalTotalBalance =
                 totalBalanceHistory |> List.last
 
-            output.WriteLine $"Final total balance: {finalTotalBalance}"
+            let finalDate = fst finalTotalBalance
+
+            let finalTotalBalanceAmounts =
+                snd finalTotalBalance
+
+            let finalTotalBalanceInEur =
+                finalTotalBalanceAmounts
+                |> convertToSingleCommodity ledger.MarketPrices "EUR" finalDate
+
+            output.WriteLine $"Final total balance: {finalTotalBalanceInEur}"
 
         | Failure (errorMsg, _, _) ->
             output.WriteLine $"PARSING ERROR: {errorMsg}"

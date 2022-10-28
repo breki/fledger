@@ -11,6 +11,24 @@ let addMultiCommodityBalances
     : MultiCommodityBalance =
     Map.union (fun amount1 amount2 -> amount1 + amount2) a b
 
+/// Convert all commodities from the balance to the single commodity using
+/// provided market prices for the given date.
+let convertToSingleCommodity
+    (marketPrices: MarketPrices)
+    (toCommodity: Commodity)
+    (date: Date)
+    (balance: MultiCommodityBalance)
+    : Amount =
+    let totalSumInTargetCommodity =
+        balance
+        |> Map.toArray
+        |> Array.map (fun (_, amount) ->
+            marketPrices.Convert amount toCommodity date)
+        |> Array.sumBy (fun amount -> amount.Value)
+
+    { Value = totalSumInTargetCommodity
+      Commodity = toCommodity }
+
 
 type AccountBalance =
     { Account: AccountRef
@@ -141,8 +159,4 @@ let absoluteTotalBalanceHistory
         (Date.MinValue, Map.empty)
 
     totalBalanceHistory
-    // |> List.reduce
     |> List.scan folder emptyBalance
-
-// todo 10: implement conversion of other commodities to EUR based on
-// market prices
