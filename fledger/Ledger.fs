@@ -1,15 +1,17 @@
 ﻿module fledger.Ledger
 
 open System
+open System.Globalization
 open fledger.BasicTypes
 open fledger.Journal
+open Text
 
 type Account = { Name: AccountRef }
 
 type Amount =
     { Value: Decimal
       Commodity: Commodity }
-    override this.ToString() = $"%f{this.Value} %s{this.Commodity}"
+    override this.ToString() = $"%.2f{this.Value} %s{this.Commodity}"
 
     static member Zero(commodity: string) =
         { Value = 0.0M; Commodity = commodity }
@@ -31,6 +33,21 @@ type Posting =
       TotalPrice: Amount option
       ExpectedBalance: Amount option }
 
+    override this.ToString() =
+        buildString ()
+        |> append this.Account.FullName
+        |> append "  "
+        |> append (this.Amount.ToString())
+        |> ifDo this.TotalPrice.IsSome (fun x ->
+            x
+            |> append " @@ "
+            |> append (this.TotalPrice.Value.ToString()))
+        |> ifDo this.ExpectedBalance.IsSome (fun x ->
+            x
+            |> append " = "
+            |> append (this.ExpectedBalance.Value.ToString()))
+        |> toString
+
 type Transaction =
     { Date: Date
       Status: TransactionStatus
@@ -39,6 +56,30 @@ type Transaction =
       Note: string option
       Comment: string option
       Postings: Posting list }
+
+    override this.ToString() =
+        buildString ()
+        |> append (
+            this.Date.ToString("yyyy/MM/dd", DateTimeFormatInfo.InvariantInfo)
+        )
+        |> append " "
+        |> ifDo (this.Status = TransactionStatus.Cleared) (append "*")
+        |> ifDo (this.Status = TransactionStatus.Pending) (append "!")
+        |> ifDo (this.Status = TransactionStatus.Unmarked) (append " ")
+        |> ifDo this.Description.IsSome (fun x ->
+            x |> append this.Description.Value)
+        |> ifDo this.Payee.IsSome (fun x -> x |> append ("|" + this.Payee.Value))
+        |> ifDo this.Note.IsSome (fun x -> x |> append ("|" + this.Note.Value))
+        |> ifDo this.Comment.IsSome (fun x ->
+            x |> append ("; " + this.Comment.Value))
+        |> newLine
+        |> append (
+            this.Postings
+            |> List.map (fun p -> "  " + p.ToString())
+            |> String.concat Environment.NewLine
+        )
+        |> toString
+
 
 type MarketPrice =
     { Date: Date
@@ -79,25 +120,6 @@ type MarketPrices =
             | None ->
                 failwith
                     $"No market price to convert commodity %s{amount.Commodity} to commodity %s{commodity2}"
-//
-// let commodityPricesMaybe =
-//     this.Prices |> Map.tryFind amount.Commodity
-//
-// if commodityPricesMaybe.IsNone then
-//     failwith (
-//         $"No market price to convert commodity %s{amount.Commodity} to commodity %s{commodity2}"
-//     )
-// else
-//     let commodityPrices =
-//         commodityPricesMaybe.Value
-//
-//     let prices: List<Date * Amount> =
-//         commodityPrices[commodity2]
-//
-//     let _, price =
-//         prices |> List.find (fun (d, _) -> d <= date)
-//
-//     amount.Convert price
 
 /// Add a new price to the MarketPrices.
 let addMarketPrice (price: MarketPrice) (prices: MarketPrices) : MarketPrices =

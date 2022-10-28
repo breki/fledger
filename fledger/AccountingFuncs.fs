@@ -160,3 +160,11 @@ let absoluteTotalBalanceHistory
 
     totalBalanceHistory
     |> List.scan folder emptyBalance
+
+
+/// Lists transactions involving a specific account.
+let listAccountTransactions accountName ledger =
+    ledger.Transactions
+    |> List.filter (fun tx ->
+        tx.Postings
+        |> List.exists (fun posting -> posting.Account.FullName = accountName))

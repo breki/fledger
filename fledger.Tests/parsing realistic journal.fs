@@ -1,6 +1,7 @@
 ﻿module fledger.``parsing realistic journal``
 
 
+open System
 open Xunit
 open System.IO
 open FsCheck
@@ -55,6 +56,16 @@ type RealisticJournalParsingTests(output: ITestOutputHelper) =
                 |> convertToSingleCommodity ledger.MarketPrices "EUR" finalDate
 
             output.WriteLine $"Final total balance: {finalTotalBalanceInEur}"
+
+            let wagaTransactions =
+                ledger
+                |> listAccountTransactions
+                    "assets:Freelancing outstanding:WagaLabs"
+                |> List.sortBy (fun t -> t.Date)
+
+            // todo 5: also print out the balance for the date of the transaction
+            wagaTransactions
+            |> List.iter (fun t -> output.WriteLine $"{t}{Environment.NewLine}")
 
         | Failure (errorMsg, _, _) ->
             output.WriteLine $"PARSING ERROR: {errorMsg}"
