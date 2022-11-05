@@ -7,6 +7,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Files", "Solution Files", "{0D499F7B-8A45-43AA-A7FC-8E16E23C137B}"
 	ProjectSection(SolutionItems) = preProject
 		tcr.bat = tcr.bat
+		brainstorming ideas.md = brainstorming ideas.md
 	EndProjectSection
 EndProject
 Global
