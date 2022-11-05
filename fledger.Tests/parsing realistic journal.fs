@@ -63,7 +63,6 @@ type RealisticJournalParsingTests(output: ITestOutputHelper) =
                     "assets:Freelancing outstanding:WagaLabs"
                 |> List.sortBy (fun t -> t.Date)
 
-            // todo 5: also print out the balance for the date of the transaction
             wagaTransactions
             |> List.iter (fun t -> output.WriteLine $"{t}{Environment.NewLine}")
 
