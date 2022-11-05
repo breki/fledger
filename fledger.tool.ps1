@@ -1,0 +1,1 @@
+& .\fledger.tool\bin\Debug\net6.0\fledger.tool.exe @args
