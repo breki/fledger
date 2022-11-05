@@ -110,16 +110,28 @@ type MarketPrices =
                 |> Map.tryFind commodity2
                 |> Option.defaultValue []
 
-            let price =
+            let closestPriceAfterDate =
                 prices
                 |> List.tryFind (fun (date', _) -> date' <= date)
-                |> Option.map snd
 
-            match price with
-            | Some price -> amount.Convert price
+            let priceAtDate =
+                match closestPriceAfterDate with
+                | Some priceAtDate -> Some priceAtDate
+                | None -> prices |> List.tryFind (fun _ -> true)
+
+            match priceAtDate with
+            | Some (_, price) -> amount.Convert price
             | None ->
+                let dateStr =
+                    date.ToString(
+                        "yyyy/MM/dd",
+                        DateTimeFormatInfo.InvariantInfo
+                    )
+
                 failwith
-                    $"No market price to convert commodity %s{amount.Commodity} to commodity %s{commodity2}"
+                    $"No market price to convert commodity \
+                    %s{amount.Commodity} to commodity %s{commodity2} \
+                    on date %s{dateStr}"
 
 /// Add a new price to the MarketPrices.
 let addMarketPrice (price: MarketPrice) (prices: MarketPrices) : MarketPrices =

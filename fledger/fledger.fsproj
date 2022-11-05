@@ -5,6 +5,14 @@
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
     </PropertyGroup>
 
+    <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+      <WarningLevel>4</WarningLevel>
+    </PropertyGroup>
+
+    <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+      <WarningLevel>4</WarningLevel>
+    </PropertyGroup>
+
     <ItemGroup>
       <Compile Include="Utils.fs" />
       <Compile Include="Text.fs" />

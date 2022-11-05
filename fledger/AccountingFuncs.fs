@@ -112,7 +112,7 @@ type BalanceOnDate = Date * MultiCommodityBalance
 type BalanceHistory = List<BalanceOnDate>
 
 
-/// Returns the total balance change for each day.
+/// Returns the total multi-currency balance change for each day.
 let totalBalanceChangeHistory (ledger: Ledger) : BalanceHistory =
     let processPosting
         (balances: BalanceByDate)
@@ -145,6 +145,7 @@ let totalBalanceChangeHistory (ledger: Ledger) : BalanceHistory =
     |> Seq.toList
 
 
+/// Returns the total multi-currency balance for each day.
 let absoluteTotalBalanceHistory
     (totalBalanceHistory: BalanceHistory)
     : BalanceHistory =
@@ -161,6 +162,27 @@ let absoluteTotalBalanceHistory
     totalBalanceHistory
     |> List.scan folder emptyBalance
 
+/// A tuple of a date and an amount.
+type CommodityBalanceOnDate = Date * Amount
+/// A list of single-commodity balances, one for each date.
+type CommodityBalanceHistory = List<CommodityBalanceOnDate>
+
+
+/// Converts the multi-commodity balance history to a single-commodity
+/// balance history.
+let toSingleCommodityBalanceHistory
+    marketPrices
+    commodity
+    (multiCommodityBalanceHistory: BalanceHistory)
+    : CommodityBalanceHistory =
+    multiCommodityBalanceHistory
+    |> List.map (fun (date, multiCommodityBalance) ->
+        (date,
+         convertToSingleCommodity
+             marketPrices
+             commodity
+             date
+             multiCommodityBalance))
 
 /// Lists transactions involving a specific account.
 let listAccountTransactions accountName ledger =
