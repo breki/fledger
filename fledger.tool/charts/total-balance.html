@@ -2,63 +2,94 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <title>Total Balance (in EUR)</title>
     <script src="https://d3js.org/d3.v7.min.js"></script>
+
+    <style>
+        .tick line {
+            stroke: #eee;
+        }
+    </style>
 </head>
 <body>
-<div id="my_dataviz"></div>
+<div id="chart"></div>
 
 <script>
     const balanceData = [placeholder_data]
 
-    // set the dimensions and margins of the graph
-    const margin = {top: 10, right: 30, bottom: 30, left: 60},
-        width = document.getElementById("my_dataviz").offsetWidth
-            - margin.left - margin.right,
-        height = 600 - margin.top - margin.bottom;
+    const {width, height, margin} = determineChartDimensions();
+    const svg = createMainSvgElement(width, height, margin);
+    const xScale = renderXAxis(svg, width, height);
+    const yScale = renderYAxis(svg, width);
+    renderBalanceSerie(svg, xScale, yScale);
 
-    // append the svg object to the body of the page
-    const svg = d3.select("#my_dataviz")
-        .append("svg")
-        .attr("width", width + margin.left + margin.right)
-        .attr("height", height + margin.top + margin.bottom)
-        .append("g")
-        .attr("transform", `translate(${margin.left},${margin.top})`);
+    function determineChartDimensions() {
+        const margin = {top: 10, right: 30, bottom: 30, left: 60},
+            width = document.getElementById("chart").offsetWidth
+                - margin.left - margin.right,
+            height = 600 - margin.top - margin.bottom;
+        return {width, height, margin};
+    }
 
-    // Add X axis --> it is a date format
-    const x = d3.scaleTime()
-        .domain(d3.extent(balanceData, function (d) {
-            return new Date(d.d);
-        }))
-        .range([0, width]);
+    function createMainSvgElement(width, height, margin) {
+        // append the svg object to the body of the page
+        return d3.select("#chart")
+            .append("svg")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+            .append("g")
+            .attr("transform", `translate(${margin.left},${margin.top})`);
+    }
 
-    svg.append("g")
-        .attr("transform", `translate(0, ${height})`)
-        .call(d3.axisBottom(x));
+    function renderXAxis(svg, width, height) {
+        // Add X axis --> it is a date format
+        const xScale = d3.scaleTime()
+            .domain(d3.extent(balanceData, function (d) {
+                return new Date(d.d);
+            }))
+            .range([0, width]);
 
-    // Add Y axis
-    const y = d3.scaleLinear()
-        .domain([0, d3.max(balanceData, function (d) {
-            return +d.v;
-        })])
-        .range([height, 0]);
-    svg.append("g")
-        .call(d3.axisLeft(y));
+        const xAxis = d3.axisBottom(xScale).tickSize(-height);
 
-    // Add the line
-    svg.append("path")
-        .datum(balanceData)
-        .attr("fill", "none")
-        .attr("stroke", "steelblue")
-        .attr("stroke-width", 1.5)
-        .attr("d", d3.line()
-            .x(function (d) {
-                return x(new Date(d.d))
-            })
-            .y(function (d) {
-                return y(d.v)
-            })
-        )
+        svg.append("g")
+            .attr("transform", `translate(0, ${height})`)
+            .call(xAxis);
+
+        return xScale;
+    }
+
+    function renderYAxis(svg, width) {
+        // Add Y axis
+        const yScaleBufferPercent = 10.0;
+
+        const yScale = d3.scaleLinear()
+            .domain([0, d3.max(balanceData, function (d) {
+                return d.v * (1 + yScaleBufferPercent / 100);
+            })])
+            .range([height, 0]);
+
+        const yAxis = d3.axisLeft(yScale).tickSize(-width);
+
+        svg.append("g").call(yAxis);
+        return yScale;
+    }
+
+    function renderBalanceSerie(svg, xScale, yScale) {
+        // Add the line
+        svg.append("path")
+            .datum(balanceData)
+            .attr("fill", "none")
+            .attr("stroke", "steelblue")
+            .attr("stroke-width", 1.5)
+            .attr("d", d3.line()
+                .x(function (d) {
+                    return xScale(new Date(d.d))
+                })
+                .y(function (d) {
+                    return yScale(d.v)
+                })
+            )
+    }
 </script>
 </body>
 </html>
