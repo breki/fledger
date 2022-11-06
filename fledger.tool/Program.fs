@@ -1,6 +1,11 @@
 ﻿open System
+open System.CommandLine
+
+open System.CommandLine.Invocation
 open System.Globalization
 open System.IO
+
+open System.Reflection
 open FParsec
 open Newtonsoft.Json
 open Thoth.Json.Net
@@ -25,11 +30,7 @@ let totalBalanceJson ledger =
               Encode.string (
                   date.ToString("yyyy-MM-dd", DateTimeFormatInfo.InvariantInfo)
               )
-              "v",
-              amount.Value
-              |> System.Math.Round
-              |> int
-              |> Encode.int ]
+              "v", amount.Value |> Math.Round |> int |> Encode.int ]
 
     let json =
         balanceHistory
@@ -38,36 +39,73 @@ let totalBalanceJson ledger =
 
     json.ToString(formatting = Formatting.None)
 
+type GenerateChartsCommandHandler() =
+    interface ICommandHandler with
+        member this.Invoke _ = raise (NotSupportedException "Invoke")
+
+        member this.InvokeAsync _ =
+            task {
+                let text =
+                    File.ReadAllText(@"D:\ledger\igor.ledger")
+
+                let result =
+                    runParserOnString
+                        pJournal
+                        { Something = 0 }
+                        "test stream"
+                        text
+
+                match result with
+                | Success (journal, _, _) ->
+                    let ledger = fillLedger journal
+                    let json = totalBalanceJson ledger
+
+                    let strExeFilePath =
+                        System
+                            .Reflection
+                            .Assembly
+                            .GetExecutingAssembly()
+                            .Location
+
+                    let strWorkPath =
+                        Path.GetDirectoryName(strExeFilePath)
+
+                    let htmlTemplateFile =
+                        Path.Combine(
+                            strWorkPath,
+                            "charts",
+                            "total-balance.html"
+                        )
+
+                    let htmlTemplateBody =
+                        File.ReadAllText(htmlTemplateFile)
+
+                    let htmlBody =
+                        htmlTemplateBody.Replace("[placeholder_data]", json)
+
+                    printfn $"%s{htmlBody}"
+                    return 0
+                | Failure (errorMsg, _, _) ->
+                    printfn $"PARSING ERROR: {errorMsg}"
+                    return 1
+            }
+
+let generateChartsCommand () : Command =
+    let cmd =
+        Command("generate-charts", "Generate charts from the ledger")
+
+    cmd.Handler <- GenerateChartsCommandHandler()
+    cmd
+
 [<EntryPoint>]
 let main args =
-    let text =
-        File.ReadAllText(@"D:\ledger\igor.ledger")
+    let root = RootCommand()
 
-    let result =
-        runParserOnString pJournal { Something = 0 } "test stream" text
+    root.Description <-
+        $"fledger.tool v{Assembly.GetExecutingAssembly().GetName().Version}"
 
-    match result with
-    | Success (journal, _, _) ->
-        let ledger = fillLedger journal
-        let json = totalBalanceJson ledger
-
-        let strExeFilePath =
-            System.Reflection.Assembly.GetExecutingAssembly().Location
-
-        let strWorkPath =
-            Path.GetDirectoryName(strExeFilePath)
-
-        let htmlTemplateFile =
-            Path.Combine(strWorkPath, "charts", "total-balance.html")
-
-        let htmlTemplateBody =
-            File.ReadAllText(htmlTemplateFile)
-
-        let htmlBody =
-            htmlTemplateBody.Replace("[placeholder_data]", json)
-
-        printfn $"%s{htmlBody}"
-        0
-    | Failure (errorMsg, _, _) ->
-        printfn $"PARSING ERROR: {errorMsg}"
-        1
+    async {
+        let! exitCode = root.InvokeAsync(args) |> Async.AwaitTask
+        return exitCode
+    }
+    |> Async.RunSynchronously
