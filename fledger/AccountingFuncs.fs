@@ -161,6 +161,8 @@ let absoluteTotalBalanceHistory
 
     totalBalanceHistory
     |> List.scan folder emptyBalance
+    // we don't want the first entry, which is the empty balance
+    |> List.tail
 
 /// A tuple of a date and an amount.
 type CommodityBalanceOnDate = Date * Amount
