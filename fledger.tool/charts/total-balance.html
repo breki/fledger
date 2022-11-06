@@ -49,7 +49,9 @@
             }))
             .range([0, width]);
 
-        const xAxis = d3.axisBottom(xScale).tickSize(-height);
+        const xAxis = d3.axisBottom(xScale)
+            // this is to render vertical grid
+            .tickSize(-height);
 
         svg.append("g")
             .attr("transform", `translate(0, ${height})`)
@@ -60,15 +62,22 @@
 
     function renderYAxis(svg, width) {
         // Add Y axis
-        const yScaleBufferPercent = 10.0;
+        const yAxisBufferAmount = 5000;
 
         const yScale = d3.scaleLinear()
-            .domain([0, d3.max(balanceData, function (d) {
-                return d.v * (1 + yScaleBufferPercent / 100);
-            })])
+            .domain([
+                d3.min(balanceData, function (d) {
+                    return d.v - yAxisBufferAmount;
+                }),
+                d3.max(balanceData, function (d) {
+                    return d.v + yAxisBufferAmount;
+                })
+            ])
             .range([height, 0]);
 
-        const yAxis = d3.axisLeft(yScale).tickSize(-width);
+        const yAxis = d3.axisLeft(yScale)
+            // this is to render horizontal grid
+            .tickSize(-width);
 
         svg.append("g").call(yAxis);
         return yScale;

@@ -1,4 +1,5 @@
-﻿open System.Globalization
+﻿open System
+open System.Globalization
 open System.IO
 open FParsec
 open Newtonsoft.Json
@@ -15,6 +16,8 @@ let totalBalanceJson ledger =
         totalBalanceChangeHistory ledger
         |> absoluteTotalBalanceHistory
         |> toSingleCommodityBalanceHistory ledger.MarketPrices eur
+        // skip the situation before 2019 since it was not fully accounted for
+        |> List.filter (fun (date, _) -> date >= DateTime(2019, 1, 1))
 
     let encodeDayBalance ((date, amount): CommodityBalanceOnDate) =
         Encode.object
