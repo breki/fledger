@@ -16,6 +16,13 @@ open fledger.AccountingFuncs
 open fledger.Ledger
 
 
+let journalFileArgument =
+    Argument<string>(
+        name = "journal file",
+        description = "Path to the journal file",
+        getDefaultValue = fun _ -> "D:\ledger\igor.ledger"
+    )
+        .LegalFilePathsOnly()
 
 let totalBalanceJson ledger =
     let eur = "EUR"
@@ -42,14 +49,21 @@ let totalBalanceJson ledger =
 
     json.ToString(formatting = Formatting.None)
 
-type GenerateChartsCommandHandler() =
+type GenerateChartsCommandHandler(journalFileArgument: Argument<string>) =
+    member this.journalFileArgument =
+        journalFileArgument
+
     interface ICommandHandler with
         member this.Invoke _ = raise (NotSupportedException "Invoke")
 
-        member this.InvokeAsync _ =
+        member this.InvokeAsync context =
             task {
-                let text =
-                    File.ReadAllText(@"D:\ledger\igor.ledger")
+                let journalFile =
+                    context.ParseResult.GetValueForArgument<string>(
+                        this.journalFileArgument
+                    )
+
+                let text = File.ReadAllText(journalFile)
 
                 let result =
                     runParserOnString
@@ -97,5 +111,7 @@ let generateChartsCommand () : Command =
     let cmd =
         Command("generate-charts", "Generate charts from the ledger")
 
-    cmd.Handler <- GenerateChartsCommandHandler()
+    cmd.AddArgument(journalFileArgument)
+
+    cmd.Handler <- GenerateChartsCommandHandler(journalFileArgument)
     cmd
