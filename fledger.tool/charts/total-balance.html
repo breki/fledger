@@ -9,7 +9,7 @@
 <div id="my_dataviz"></div>
 
 <script>
-    const balanceData = ///data///
+    const balanceData = [placeholder_data]
 
     // set the dimensions and margins of the graph
     const margin = {top: 10, right: 30, bottom: 30, left: 60},
@@ -28,8 +28,7 @@
     // Add X axis --> it is a date format
     const x = d3.scaleTime()
         .domain(d3.extent(balanceData, function (d) {
-            return new Date(d.date);
-            // return d3.timeParse("%Y-%m-%d")(d.date);
+            return new Date(d.d);
         }))
         .range([0, width]);
 
@@ -40,7 +39,7 @@
     // Add Y axis
     const y = d3.scaleLinear()
         .domain([0, d3.max(balanceData, function (d) {
-            return +d.amount;
+            return +d.v;
         })])
         .range([height, 0]);
     svg.append("g")
@@ -54,11 +53,10 @@
         .attr("stroke-width", 1.5)
         .attr("d", d3.line()
             .x(function (d) {
-                console.log(new Date(d.date));
-                return x(new Date(d.date))
+                return x(new Date(d.d))
             })
             .y(function (d) {
-                return y(d.amount)
+                return y(d.v)
             })
         )
 </script>

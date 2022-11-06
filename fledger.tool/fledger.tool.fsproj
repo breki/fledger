@@ -29,7 +29,9 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Content Include="charts\total-balance.html" />
+      <Content Include="charts\total-balance.html">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
     </ItemGroup>
 
 </Project>

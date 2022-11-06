@@ -1,4 +1,4 @@
 ﻿module fledger.Tests.Todo
 
-// todo 10: command to generate JSON for total balance and then write out the
-//  HTML, filling in the placeholder
+// todo 15: beautify the chart - axes etc.
+// todo 20: expose the command as subcommand of the main command

@@ -2,3 +2,7 @@
 **/obj
 **/bin
 *.user
+
+
+data.json
+chart.html
