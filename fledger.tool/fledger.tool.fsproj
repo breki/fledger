@@ -14,10 +14,6 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <Compile Include="Program.fs" />
-    </ItemGroup>
-
-    <ItemGroup>
       <ProjectReference Include="..\fledger\fledger.fsproj" />
     </ItemGroup>
 
@@ -32,6 +28,8 @@
       <Content Include="charts\total-balance.html">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </Content>
+      <Compile Include="Commands\GenerateCharts.fs" />
+      <Compile Include="Commands\Program.fs" />
     </ItemGroup>
 
 </Project>

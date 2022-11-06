@@ -1,11 +1,12 @@
-﻿open System
+﻿module fledger.tool.Commands.GenerateCharts
+
+open System
 open System.CommandLine
 
 open System.CommandLine.Invocation
 open System.Globalization
 open System.IO
 
-open System.Reflection
 open FParsec
 open Newtonsoft.Json
 open Thoth.Json.Net
@@ -13,6 +14,8 @@ open fledger.Parsing.ParsingBasics
 open fledger.Parsing.ParsingJournal
 open fledger.AccountingFuncs
 open fledger.Ledger
+
+
 
 let totalBalanceJson ledger =
     let eur = "EUR"
@@ -96,16 +99,3 @@ let generateChartsCommand () : Command =
 
     cmd.Handler <- GenerateChartsCommandHandler()
     cmd
-
-[<EntryPoint>]
-let main args =
-    let root = RootCommand()
-
-    root.Description <-
-        $"fledger.tool v{Assembly.GetExecutingAssembly().GetName().Version}"
-
-    async {
-        let! exitCode = root.InvokeAsync(args) |> Async.AwaitTask
-        return exitCode
-    }
-    |> Async.RunSynchronously
