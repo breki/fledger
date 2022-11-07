@@ -24,6 +24,14 @@ let journalFileArgument =
     )
         .LegalFilePathsOnly()
 
+let outputDirOption =
+    Option<string>(
+        aliases = [| "--output-dir"; "-o" |],
+        description = "Path to the output directory",
+        getDefaultValue = fun _ -> "output"
+    )
+        .LegalFilePathsOnly()
+
 let totalBalanceJson ledger =
     let eur = "EUR"
 
@@ -49,9 +57,37 @@ let totalBalanceJson ledger =
 
     json.ToString(formatting = Formatting.None)
 
-type GenerateChartsCommandHandler(journalFileArgument: Argument<string>) =
+
+let generateHtml templateDir htmlTemplateFileName json outputDir =
+    let htmlTemplateFile =
+        Path.Combine(templateDir, htmlTemplateFileName)
+
+    let htmlTemplateBody =
+        File.ReadAllText(htmlTemplateFile)
+
+    let htmlBody =
+        htmlTemplateBody.Replace("[placeholder_data]", json)
+
+    if not (Directory.Exists(outputDir)) then
+        Directory.CreateDirectory(outputDir) |> ignore
+
+    let fullHtmlFileName =
+        Path.Combine(outputDir, htmlTemplateFileName)
+
+    File.WriteAllText(fullHtmlFileName, htmlBody)
+
+    printfn $"Chart saved to '%s{fullHtmlFileName}'."
+
+
+type GenerateChartsCommandHandler
+    (
+        journalFileArgument,
+        outputDirOption: Option<string>
+    ) =
     member this.journalFileArgument =
         journalFileArgument
+
+    member this.outputDirOption = outputDirOption
 
     interface ICommandHandler with
         member this.Invoke _ = raise (NotSupportedException "Invoke")
@@ -61,6 +97,11 @@ type GenerateChartsCommandHandler(journalFileArgument: Argument<string>) =
                 let journalFile =
                     context.ParseResult.GetValueForArgument<string>(
                         this.journalFileArgument
+                    )
+
+                let outputDir =
+                    context.ParseResult.GetValueForOption<string>(
+                        this.outputDirOption
                     )
 
                 let text = File.ReadAllText(journalFile)
@@ -87,20 +128,14 @@ type GenerateChartsCommandHandler(journalFileArgument: Argument<string>) =
                     let strWorkPath =
                         Path.GetDirectoryName(strExeFilePath)
 
-                    let htmlTemplateFile =
-                        Path.Combine(
-                            strWorkPath,
-                            "charts",
-                            "total-balance.html"
-                        )
+                    let templateDir =
+                        Path.Combine(strWorkPath, "charts")
 
-                    let htmlTemplateBody =
-                        File.ReadAllText(htmlTemplateFile)
+                    let htmlTemplateFileName =
+                        "total-balance.html"
 
-                    let htmlBody =
-                        htmlTemplateBody.Replace("[placeholder_data]", json)
+                    generateHtml templateDir htmlTemplateFileName json outputDir
 
-                    printfn $"%s{htmlBody}"
                     return 0
                 | Failure (errorMsg, _, _) ->
                     printfn $"PARSING ERROR: {errorMsg}"
@@ -112,6 +147,9 @@ let generateChartsCommand () : Command =
         Command("generate-charts", "Generate charts from the ledger")
 
     cmd.AddArgument(journalFileArgument)
+    cmd.AddOption(outputDirOption)
 
-    cmd.Handler <- GenerateChartsCommandHandler(journalFileArgument)
+    cmd.Handler <-
+        GenerateChartsCommandHandler(journalFileArgument, outputDirOption)
+
     cmd
