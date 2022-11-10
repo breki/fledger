@@ -192,3 +192,36 @@ let listAccountTransactions accountName ledger =
     |> List.filter (fun tx ->
         tx.Postings
         |> List.exists (fun posting -> posting.Account.FullName = accountName))
+
+
+// todo 5: function that fills the balance for each day of the ledger, even
+//  if there were no transactions on that date
+let fullDatesBalanceHistory (balanceHistory: BalanceHistory) : BalanceHistory =
+    match balanceHistory with
+    | [] -> []
+    | _ ->
+        let firstDay = balanceHistory |> List.head
+
+        let restOfDays =
+            balanceHistory
+            |> List.pairwise
+            |> List.map
+                (fun ((dateBefore, balanceBefore), (dateAfter, balanceAfter)) ->
+                    let daysBetween =
+                        (dateAfter.Date - dateBefore.Date).Days
+
+                    if daysBetween - 1 > 1 then
+                        let dateBeforeNext = dateBefore.AddDays 1
+
+                        let dates =
+                            Seq.init (daysBetween - 1) dateBeforeNext.AddDays
+
+                        (dates
+                         |> Seq.map (fun date -> (date, balanceBefore))
+                         |> Seq.toList)
+                        @ [ (dateAfter, balanceAfter) ]
+                    else
+                        [ (dateAfter, balanceAfter) ])
+            |> List.concat
+
+        firstDay :: restOfDays
