@@ -7,7 +7,11 @@
 
     <style>
         .tick line {
-            stroke: #eee;
+            stroke: #ccc;
+        }
+
+        .tick text {
+            font-size: 1.5em;
         }
     </style>
 </head>
@@ -17,31 +21,9 @@
 <script>
     const balanceData = [placeholder_data]
 
-    const {width, height, margin} = determineChartDimensions();
-    const svg = createMainSvgElement(width, height, margin);
-    const xScale = renderXAxis(svg, width, height);
-    const yScale = renderYAxis(svg, width);
-    renderBalanceSerie(svg, xScale, yScale);
+    function drawChart() {
+        const {width, height, margin} = determineChartDimensions();
 
-    function determineChartDimensions() {
-        const margin = {top: 10, right: 30, bottom: 30, left: 60},
-            width = document.getElementById("chart").offsetWidth
-                - margin.left - margin.right,
-            height = 600 - margin.top - margin.bottom;
-        return {width, height, margin};
-    }
-
-    function createMainSvgElement(width, height, margin) {
-        // append the svg object to the body of the page
-        return d3.select("#chart")
-            .append("svg")
-            .attr("width", width + margin.left + margin.right)
-            .attr("height", height + margin.top + margin.bottom)
-            .append("g")
-            .attr("transform", `translate(${margin.left},${margin.top})`);
-    }
-
-    function renderXAxis(svg, width, height) {
         // Add X axis --> it is a date format
         const xScale = d3.scaleTime()
             .domain(d3.extent(balanceData, function (d) {
@@ -50,17 +32,16 @@
             .range([0, width]);
 
         const xAxis = d3.axisBottom(xScale)
+            .tickFormat(function (date) {
+                if (d3.timeYear(date) < date) {
+                    return d3.timeFormat('%b')(date);
+                } else {
+                    return d3.timeFormat('%Y')(date);
+                }
+            })
             // this is to render vertical grid
             .tickSize(-height);
 
-        svg.append("g")
-            .attr("transform", `translate(0, ${height})`)
-            .call(xAxis);
-
-        return xScale;
-    }
-
-    function renderYAxis(svg, width) {
         // Add Y axis
         const yAxisBufferAmount = 5000;
 
@@ -79,26 +60,64 @@
             // this is to render horizontal grid
             .tickSize(-width);
 
+        const svg = createMainSvgElement(width, height, margin);
+        svg.append("g")
+            .attr("transform", `translate(0, ${height})`)
+            .call(xAxis);
         svg.append("g").call(yAxis);
-        return yScale;
+
+        renderBalanceSerie(svg, xScale, yScale);
+
+        function determineChartDimensions() {
+            const margin = {top: 10, right: 30, bottom: 30, left: 60},
+                width = document.getElementById("chart").offsetWidth
+                    - margin.left - margin.right,
+                height = 600 - margin.top - margin.bottom;
+            return {width, height, margin};
+        }
+
+        function createMainSvgElement(width, height, margin) {
+            let svg = d3.select("#chart").selectAll('svg').data([0]);
+
+            let chartWidth = width + margin.left + margin.right;
+            let chartHeight = height + margin.top + margin.bottom;
+
+            // append the svg object to the body of the page
+            return svg.enter()
+                .append("svg")
+                .attr("viewBox", "0 0 " + chartWidth + " " + chartHeight)
+                .append("g")
+                .attr("transform", `translate(${margin.left},${margin.top})`);
+        }
+
+        function renderBalanceSerie(svg, xScale, yScale) {
+            // Add the line
+            svg.append("path")
+                .datum(balanceData)
+                .attr("fill", "none")
+                .attr("stroke", "steelblue")
+                .attr("stroke-width", 1.5)
+                .attr("d", d3.line()
+                    .x(function (d) {
+                        return xScale(new Date(d.d))
+                    })
+                    .y(function (d) {
+                        return yScale(d.v)
+                    })
+                )
+        }
     }
 
-    function renderBalanceSerie(svg, xScale, yScale) {
-        // Add the line
-        svg.append("path")
-            .datum(balanceData)
-            .attr("fill", "none")
-            .attr("stroke", "steelblue")
-            .attr("stroke-width", 1.5)
-            .attr("d", d3.line()
-                .x(function (d) {
-                    return xScale(new Date(d.d))
-                })
-                .y(function (d) {
-                    return yScale(d.v)
-                })
-            )
+    // Define responsive behavior
+    function resize() {
+        drawChart();
     }
+
+    // Call the resize function whenever a resize event occurs
+    d3.select(window).on('resize', resize);
+
+    // Call the resize function
+    resize();
 </script>
 </body>
 </html>
