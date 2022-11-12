@@ -24,6 +24,7 @@
         <Compile Include="parsing\parsing tx posting.fs" />
         <Compile Include="Todo.fs" />
         <Compile Include="accounting functions\full dates balance history.fs" />
+        <Compile Include="accounting functions\balance history moving averages.fs" />
     </ItemGroup>
 
     <ItemGroup>

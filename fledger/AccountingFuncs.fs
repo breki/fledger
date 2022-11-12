@@ -217,3 +217,8 @@ let fullDatesBalanceHistory (balanceHistory: BalanceHistory) : BalanceHistory =
 
         balancesExceptLast
         @ [ balanceHistory |> List.last ]
+
+
+// todo 5: implement the function to calculate the moving averages for
+// balance history
+let balanceHistoryMovingAverage movingAverageDays balanceHistory = []
