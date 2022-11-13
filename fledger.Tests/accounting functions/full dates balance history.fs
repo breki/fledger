@@ -6,21 +6,22 @@ open System
 open Xunit
 open Swensen.Unquote
 open fledger.AccountingFuncs
+open fledger.BalanceTypes
 open fledger.Ledger
 
 let someDate = DateTime(2018, 1, 1)
 
 let someBalance1 =
-    [ ("EUR", { Value = 10m; Commodity = "EUR" }) ]
-    |> Map.ofList
+    [ { Value = 10m; Commodity = "EUR" } ]
+    |> MultiCommodityBalance.FromAmounts
 
 let someBalance2 =
-    [ ("EUR", { Value = 30m; Commodity = "EUR" }) ]
-    |> Map.ofList
+    [ { Value = 30m; Commodity = "EUR" } ]
+    |> MultiCommodityBalance.FromAmounts
 
 let someBalance3 =
-    [ ("EUR", { Value = 20m; Commodity = "EUR" }) ]
-    |> Map.ofList
+    [ { Value = 20m; Commodity = "EUR" } ]
+    |> MultiCommodityBalance.FromAmounts
 
 [<Fact>]
 let ``empty balance history`` () =

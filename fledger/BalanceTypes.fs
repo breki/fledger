@@ -5,20 +5,43 @@ open fledger.Ledger
 
 // todo 7: expose a proper MultiCommodityBalance with operators
 //  (just like Amount)
-type MultiCommodityBalance = Map<Commodity, Amount>
+type MultiCommodityBalance =
+    { Commodities: Map<Commodity, Amount> }
+    static member FromCommodities(commodities: Map<Commodity, Amount>) =
+        { Commodities = commodities }
+
+    static member FromAmounts(amounts: Amount seq) : MultiCommodityBalance =
+        { Commodities =
+            amounts
+            |> Seq.map (fun amount -> (amount.Commodity, amount))
+            |> Map.ofSeq }
+
+    static member Empty =
+        MultiCommodityBalance.FromCommodities Map.empty
+
+    member this.AddCommodity commodity balance =
+        let newCommodities =
+            this.Commodities.Add(commodity, balance)
+
+        MultiCommodityBalance.FromCommodities newCommodities
 
 let addMultiCommodityBalances
     (a: MultiCommodityBalance)
     (b: MultiCommodityBalance)
     : MultiCommodityBalance =
-    Map.union (fun amount1 amount2 -> amount1 + amount2) a b
+    Map.union
+        (fun amount1 amount2 -> amount1 + amount2)
+        a.Commodities
+        b.Commodities
+    |> MultiCommodityBalance.FromCommodities
 
 let divideMultiCommodityBalance
     (divisor: int)
     (balance: MultiCommodityBalance)
     : MultiCommodityBalance =
-    balance
+    balance.Commodities
     |> Map.map (fun _ amount -> amount / divisor)
+    |> MultiCommodityBalance.FromCommodities
 
 /// Convert all commodities from the balance to the single commodity using
 /// provided market prices for the given date.
@@ -29,7 +52,7 @@ let convertToSingleCommodity
     (balance: MultiCommodityBalance)
     : Amount =
     let totalSumInTargetCommodity =
-        balance
+        balance.Commodities
         |> Map.toArray
         |> Array.map (fun (_, amount) ->
             marketPrices.Convert amount toCommodity date)

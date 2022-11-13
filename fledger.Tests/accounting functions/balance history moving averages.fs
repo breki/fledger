@@ -4,20 +4,20 @@ open System
 open Xunit
 open Swensen.Unquote
 open fledger.AccountingFuncs
+open fledger.BalanceTypes
 open fledger.Ledger
 
 let baseDate = DateTime(2022, 11, 12)
 
-let balanceHistoryWith amounts =
+let balanceHistoryWith amounts : BalanceHistory =
     amounts
     |> List.mapi (fun i amount ->
         let date = baseDate.AddDays i
 
         (date,
-         [ ("EUR",
-            { Value = amount |> decimal
-              Commodity = "EUR" }) ]
-         |> Map.ofList))
+         [ { Value = amount |> decimal
+             Commodity = "EUR" } ]
+         |> MultiCommodityBalance.FromAmounts))
 
 let moveByDays (days: int) (balanceHistory: BalanceHistory) =
     balanceHistory

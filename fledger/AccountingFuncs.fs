@@ -19,10 +19,10 @@ let accountsBalances (ledger: Ledger) =
             |> Map.tryFind account
             |> Option.defaultValue
                 { Account = account
-                  Balance = Map.empty }
+                  Balance = MultiCommodityBalance.Empty }
 
         let newCommodityBalance =
-            accountBalance.Balance
+            accountBalance.Balance.Commodities
             |> Map.tryFind commodity
             |> Option.defaultValue (commodity |> Amount.Zero)
             |> (+) amount
@@ -30,8 +30,9 @@ let accountsBalances (ledger: Ledger) =
         let newAccountBalance =
             { accountBalance with
                 Balance =
-                    accountBalance.Balance
-                    |> Map.add commodity newCommodityBalance }
+                    accountBalance.Balance.AddCommodity
+                        commodity
+                        newCommodityBalance }
 
         { balances with
             Balances =
@@ -58,16 +59,16 @@ let addAmountToBalance
     let balance =
         balances
         |> Map.tryFind date
-        |> Option.defaultValue Map.empty
+        |> Option.defaultValue MultiCommodityBalance.Empty
 
     let newBalance =
-        balance
+        balance.Commodities
         |> Map.tryFind commodity
         |> Option.defaultValue (commodity |> Amount.Zero)
         |> (+) amount
 
     balances
-    |> Map.add date (balance |> Map.add commodity newBalance)
+    |> Map.add date (balance.AddCommodity commodity newBalance)
 
 
 /// Returns the total multi-currency balance change for each day.
@@ -115,7 +116,7 @@ let absoluteTotalBalanceHistory
          addMultiCommodityBalances currentTotalBalance totalBalanceChangeForDate)
 
     let emptyBalance =
-        (Date.MinValue, Map.empty)
+        (Date.MinValue, MultiCommodityBalance.Empty)
 
     totalBalanceHistory
     |> List.scan folder emptyBalance
@@ -187,7 +188,7 @@ let balanceHistoryMovingAverage
         let averageBalance =
             window
             |> List.map snd
-            |> List.fold addMultiCommodityBalances Map.empty
+            |> List.fold addMultiCommodityBalances MultiCommodityBalance.Empty
             |> divideMultiCommodityBalance movingAverageDays
 
         (dateOfAverage, averageBalance))

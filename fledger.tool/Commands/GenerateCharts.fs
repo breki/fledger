@@ -10,6 +10,7 @@ open System.IO
 open FParsec
 open Newtonsoft.Json
 open Thoth.Json.Net
+open fledger.BalanceTypes
 open fledger.Parsing.ParsingBasics
 open fledger.Parsing.ParsingJournal
 open fledger.AccountingFuncs
