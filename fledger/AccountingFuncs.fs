@@ -177,17 +177,20 @@ let balanceHistoryMovingAverage
     (balanceHistory: BalanceHistory)
     : BalanceHistory =
 
-    let daysBefore = movingAverageDays / 2
+    if movingAverageDays > 0 then
+        let daysBefore = movingAverageDays / 2
 
-    balanceHistory
-    |> List.windowed movingAverageDays
-    |> List.map (fun window ->
-        let dateOfAverage, _ = window[daysBefore]
+        balanceHistory
+        |> List.windowed movingAverageDays
+        |> List.map (fun window ->
+            let dateOfAverage, _ = window[daysBefore]
 
-        let averageBalance =
-            window
-            |> List.map snd
-            |> List.fold (+) MultiCommodityBalance.Empty
-            |> divideMultiCommodityBalance movingAverageDays
+            let averageBalance =
+                window
+                |> List.map snd
+                |> List.fold (+) MultiCommodityBalance.Empty
+                |> divideMultiCommodityBalance movingAverageDays
 
-        (dateOfAverage, averageBalance))
+            (dateOfAverage, averageBalance))
+    else
+        failwith "movingAverageDays must be positive"

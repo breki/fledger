@@ -14,6 +14,9 @@ type Amount =
     { Value: Decimal
       Commodity: Commodity }
 
+    static member Of (commodity: Commodity) (value: Decimal) =
+        { Value = value; Commodity = commodity }
+
     static member Zero(commodity: string) =
         { Value = 0.0M; Commodity = commodity }
 
