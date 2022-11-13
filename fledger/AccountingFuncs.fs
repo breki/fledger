@@ -3,6 +3,10 @@
 open fledger.BasicTypes
 open fledger.Ledger
 
+// todo 6: move the multi-commodity balance type and functions to their own
+//  module
+// todo 7: expose a proper MultiCommodityBalance with operators
+//  (just like Amount)
 type MultiCommodityBalance = Map<Commodity, Amount>
 
 let addMultiCommodityBalances
@@ -10,6 +14,13 @@ let addMultiCommodityBalances
     (b: MultiCommodityBalance)
     : MultiCommodityBalance =
     Map.union (fun amount1 amount2 -> amount1 + amount2) a b
+
+let divideMultiCommodityBalance
+    (divisor: int)
+    (balance: MultiCommodityBalance)
+    : MultiCommodityBalance =
+    balance
+    |> Map.map (fun _ amount -> amount / divisor)
 
 /// Convert all commodities from the balance to the single commodity using
 /// provided market prices for the given date.
@@ -219,6 +230,22 @@ let fullDatesBalanceHistory (balanceHistory: BalanceHistory) : BalanceHistory =
         @ [ balanceHistory |> List.last ]
 
 
-// todo 5: implement the function to calculate the moving averages for
-// balance history
-let balanceHistoryMovingAverage movingAverageDays balanceHistory = []
+let balanceHistoryMovingAverage
+    (movingAverageDays: int)
+    (balanceHistory: BalanceHistory)
+    : BalanceHistory =
+
+    let daysBefore = movingAverageDays / 2
+
+    balanceHistory
+    |> List.windowed movingAverageDays
+    |> List.map (fun window ->
+        let dateOfAverage, _ = window[daysBefore]
+
+        let averageBalance =
+            window
+            |> List.map snd
+            |> List.fold addMultiCommodityBalances Map.empty
+            |> divideMultiCommodityBalance movingAverageDays
+
+        (dateOfAverage, averageBalance))

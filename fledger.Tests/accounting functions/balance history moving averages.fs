@@ -6,27 +6,22 @@ open Swensen.Unquote
 open fledger.AccountingFuncs
 open fledger.Ledger
 
-let testBalanceHistory days : BalanceHistory =
-    let baseDate = DateTime(2022, 11, 12)
+let baseDate = DateTime(2022, 11, 12)
 
-    [| for i in 1..days -> i - 1 |]
-    |> Array.map (fun i ->
-        let date = baseDate.AddDays(float i)
+let balanceHistoryWith amounts =
+    amounts
+    |> List.mapi (fun i amount ->
+        let date = baseDate.AddDays i
 
-        let amount =
-            match i % 3 with
-            | 0 -> 100
-            | 1 -> 0
-            | _ -> -100
-
-        (date, amount))
-    |> Array.map (fun (date, amount) ->
         (date,
          [ ("EUR",
             { Value = amount |> decimal
               Commodity = "EUR" }) ]
          |> Map.ofList))
-    |> Array.toList
+
+let moveByDays (days: int) (balanceHistory: BalanceHistory) =
+    balanceHistory
+    |> List.map (fun (date, amounts) -> (date.AddDays days, amounts))
 
 [<Fact>]
 let ``empty balance history`` () =
@@ -39,9 +34,80 @@ let ``empty balance history`` () =
 
 [<Fact>]
 let ``balance history shorter than averaged days`` () =
-    let balanceHistory = testBalanceHistory 2
+    let balanceHistory =
+        balanceHistoryWith [ 50; 100 ]
 
     let movingAverages =
         balanceHistory |> balanceHistoryMovingAverage 5
 
     test <@ movingAverages = [] @>
+
+[<Fact>]
+let ``balance history with single resulting balance`` () =
+    let balanceHistory =
+        balanceHistoryWith [ 50; 100; 0; -100; -50 ]
+
+    let movingAverageDays =
+        balanceHistory |> List.length
+
+    let expectedMovingAverages =
+        balanceHistoryWith [ 0 ]
+        |> moveByDays (movingAverageDays / 2)
+
+    let movingAverages =
+        balanceHistory
+        |> balanceHistoryMovingAverage movingAverageDays
+
+    test <@ movingAverages = expectedMovingAverages @>
+
+[<Fact>]
+let ``balance history with two resulting balances`` () =
+    let balanceHistory =
+        balanceHistoryWith [ 50; 100; 0; -100 ]
+
+    let movingAverageDays = 3
+
+    let expectedMovingAverages =
+        balanceHistoryWith [ 50; 0 ]
+        |> moveByDays (movingAverageDays / 2)
+
+    let movingAverages =
+        balanceHistory
+        |> balanceHistoryMovingAverage movingAverageDays
+
+    test <@ movingAverages = expectedMovingAverages @>
+
+[<Fact>]
+let ``balance history with three resulting balances`` () =
+    let balanceHistory =
+        balanceHistoryWith [ 50; 100; 0; -100; 40 ]
+
+    let movingAverageDays = 3
+
+    let expectedMovingAverages =
+        balanceHistoryWith [ 50; 0; -20 ]
+        |> moveByDays (movingAverageDays / 2)
+
+    let movingAverages =
+        balanceHistory
+        |> balanceHistoryMovingAverage movingAverageDays
+
+    test <@ movingAverages = expectedMovingAverages @>
+
+[<Fact>]
+let ``balance history with even number of moving average days`` () =
+    let balanceHistory =
+        balanceHistoryWith [ 100; 100; 0; -100; 40 ]
+
+    let movingAverageDays = 4
+
+    let expectedMovingAverages =
+        balanceHistoryWith [ 25; 10 ] |> moveByDays 2
+
+    let movingAverages =
+        balanceHistory
+        |> balanceHistoryMovingAverage movingAverageDays
+
+    test <@ movingAverages = expectedMovingAverages @>
+
+// todo 10: implement property tests for moving averages

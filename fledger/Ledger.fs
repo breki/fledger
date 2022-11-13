@@ -8,10 +8,10 @@ open Text
 
 type Account = { Name: AccountRef }
 
+[<StructuredFormatDisplay("{DisplayText}")>]
 type Amount =
     { Value: Decimal
       Commodity: Commodity }
-    override this.ToString() = $"%.2f{this.Value} %s{this.Commodity}"
 
     static member Zero(commodity: string) =
         { Value = 0.0M; Commodity = commodity }
@@ -23,9 +23,16 @@ type Amount =
         { Value = a.Value + b.Value
           Commodity = a.Commodity }
 
+    static member (/)(amount: Amount, divisor: int) =
+        { Value = amount.Value / (decimal divisor)
+          Commodity = amount.Commodity }
+
     member this.Convert(price: Amount) : Amount =
         { Value = this.Value * price.Value
           Commodity = price.Commodity }
+
+    override this.ToString() = $"%.2f{this.Value} %s{this.Commodity}"
+    member this.DisplayText = this.ToString()
 
 type Posting =
     { Account: AccountRef
