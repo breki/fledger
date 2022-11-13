@@ -3,8 +3,6 @@
 open fledger.BasicTypes
 open fledger.Ledger
 
-// todo 7: expose a proper MultiCommodityBalance with operators
-//  (just like Amount)
 type MultiCommodityBalance =
     { Commodities: Map<Commodity, Amount> }
     static member FromCommodities(commodities: Map<Commodity, Amount>) =
@@ -25,15 +23,17 @@ type MultiCommodityBalance =
 
         MultiCommodityBalance.FromCommodities newCommodities
 
-let addMultiCommodityBalances
-    (a: MultiCommodityBalance)
-    (b: MultiCommodityBalance)
-    : MultiCommodityBalance =
-    Map.union
-        (fun amount1 amount2 -> amount1 + amount2)
-        a.Commodities
-        b.Commodities
-    |> MultiCommodityBalance.FromCommodities
+    static member (+)
+        (
+            a: MultiCommodityBalance,
+            b: MultiCommodityBalance
+        ) : MultiCommodityBalance =
+        Map.union
+            (fun amount1 amount2 -> amount1 + amount2)
+            a.Commodities
+            b.Commodities
+        |> MultiCommodityBalance.FromCommodities
+
 
 let divideMultiCommodityBalance
     (divisor: int)

@@ -112,8 +112,7 @@ let absoluteTotalBalanceHistory
         ((_, currentTotalBalance): BalanceOnDate)
         ((date, totalBalanceChangeForDate): BalanceOnDate)
         : BalanceOnDate =
-        (date,
-         addMultiCommodityBalances currentTotalBalance totalBalanceChangeForDate)
+        (date, currentTotalBalance + totalBalanceChangeForDate)
 
     let emptyBalance =
         (Date.MinValue, MultiCommodityBalance.Empty)
@@ -188,7 +187,7 @@ let balanceHistoryMovingAverage
         let averageBalance =
             window
             |> List.map snd
-            |> List.fold addMultiCommodityBalances MultiCommodityBalance.Empty
+            |> List.fold (+) MultiCommodityBalance.Empty
             |> divideMultiCommodityBalance movingAverageDays
 
         (dateOfAverage, averageBalance))
