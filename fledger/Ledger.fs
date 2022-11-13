@@ -8,6 +8,7 @@ open Text
 
 type Account = { Name: AccountRef }
 
+[<Struct>]
 [<StructuredFormatDisplay("{DisplayText}")>]
 type Amount =
     { Value: Decimal

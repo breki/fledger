@@ -8,7 +8,7 @@ type Commodity = string
 type AccountName = string
 
 
-[<CustomEquality; CustomComparison>]
+[<Struct; CustomEquality; CustomComparison>]
 type AccountRef =
     { FullName: AccountName
       NameParts: string[] }

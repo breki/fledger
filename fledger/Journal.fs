@@ -12,6 +12,7 @@ type TransactionInfo =
       Note: string option
       Comment: string option }
 
+[<Struct>]
 type JournalAmount =
     { Value: Decimal
       Commodity: string option }
@@ -26,6 +27,7 @@ type TransactionDirective =
     { Info: TransactionInfo
       Postings: PostingLine list }
 
+[<Struct>]
 type MarketPriceDirective =
     { Date: Date
       Commodity: string
