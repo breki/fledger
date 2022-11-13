@@ -12,6 +12,7 @@ open Xunit.Abstractions
 open fledger.Parsing.ParsingBasics
 open fledger.Parsing.ParsingJournal
 open fledger.Ledger
+open fledger.BalanceTypes
 open fledger.AccountingFuncs
 
 open Swensen.Unquote
