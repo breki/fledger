@@ -24,9 +24,11 @@
     function drawChart() {
         const {width, height, margin} = determineChartDimensions();
 
+        const allData = balanceData[0]["data"].concat(balanceData[1]["data"]);
+
         // Add X axis --> it is a date format
         const xScale = d3.scaleTime()
-            .domain(d3.extent(balanceData, function (d) {
+            .domain(d3.extent(allData, function (d) {
                 return new Date(d.d);
             }))
             .range([0, width]);
@@ -44,11 +46,7 @@
 
         // Add Y axis
         const yScale = d3.scaleLinear()
-            .domain([0,
-                d3.max(balanceData, function (d) {
-                    return d.v * 1.1;
-                })
-            ])
+            .domain([0, 5000])
             .range([height, 0]);
 
         const yAxis = d3.axisLeft(yScale)
@@ -61,7 +59,8 @@
             .call(xAxis);
         svg.append("g").call(yAxis);
 
-        renderBalanceSerie(svg, xScale, yScale);
+        renderBalanceSerie(svg, xScale, yScale, 0, "steelblue");
+        renderBalanceSerie(svg, xScale, yScale, 1, "darkred");
 
         function determineChartDimensions() {
             const margin = {top: 10, right: 30, bottom: 30, left: 60},
@@ -85,12 +84,12 @@
                 .attr("transform", `translate(${margin.left},${margin.top})`);
         }
 
-        function renderBalanceSerie(svg, xScale, yScale) {
+        function renderBalanceSerie(svg, xScale, yScale, serieIndex, color) {
             // Add the line
             svg.append("path")
-                .datum(balanceData)
+                .datum(balanceData[serieIndex]["data"])
                 .attr("fill", "none")
-                .attr("stroke", "steelblue")
+                .attr("stroke", color)
                 .attr("stroke-width", 1.5)
                 .attr("d", d3.line()
                     .x(function (d) {

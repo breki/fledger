@@ -70,8 +70,19 @@ let incomeAndExpensesJson ledger =
         |> commodityBalanceHistoryMovingAverage 90
         |> List.filter (fun (date, _) -> date >= DateTime(2019, 1, 1))
 
+    let expenses =
+        dailyExpenses ledger
+        |> fullDatesBalanceHistory
+        |> toSingleCommodityBalanceHistory ledger.MarketPrices eur
+        |> List.map (fun (date, amount) -> date, amount * 30)
+        |> commodityBalanceHistoryMovingAverage 90
+        |> List.filter (fun (date, _) -> date >= DateTime(2019, 1, 1))
 
-    let encodeDayBalance ((date, amount): CommodityBalanceOnDate) =
+    let allData =
+        [ "income", income
+          "expenses", expenses ]
+
+    let encodeData ((date, amount): CommodityBalanceOnDate) =
         Encode.object
             [ "d",
               Encode.string (
@@ -79,8 +90,15 @@ let incomeAndExpensesJson ledger =
               )
               "v", amount.Value |> Math.Round |> int |> Encode.int ]
 
+    let encodeSerie (name, data) =
+        let serieData = data |> List.map encodeData
+
+        Encode.object
+            [ "serie", Encode.string name
+              "data", Encode.list serieData ]
+
     let json =
-        income |> List.map encodeDayBalance |> Encode.list
+        allData |> List.map encodeSerie |> Encode.list
 
     json.ToString(formatting = Formatting.None)
 
