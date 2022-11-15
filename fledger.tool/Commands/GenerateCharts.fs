@@ -59,6 +59,31 @@ let totalBalanceJson ledger =
     json.ToString(formatting = Formatting.None)
 
 
+let incomeAndExpensesJson ledger =
+    let eur = "EUR"
+
+    let income =
+        dailyIncome ledger
+        |> fullDatesBalanceHistory
+        |> toSingleCommodityBalanceHistory ledger.MarketPrices eur
+        |> List.map (fun (date, amount) -> date, amount * -30)
+        |> commodityBalanceHistoryMovingAverage 90
+        |> List.filter (fun (date, _) -> date >= DateTime(2019, 1, 1))
+
+
+    let encodeDayBalance ((date, amount): CommodityBalanceOnDate) =
+        Encode.object
+            [ "d",
+              Encode.string (
+                  date.ToString("yyyy-MM-dd", DateTimeFormatInfo.InvariantInfo)
+              )
+              "v", amount.Value |> Math.Round |> int |> Encode.int ]
+
+    let json =
+        income |> List.map encodeDayBalance |> Encode.list
+
+    json.ToString(formatting = Formatting.None)
+
 let generateHtml templateDir htmlTemplateFileName json outputDir =
     let htmlTemplateFile =
         Path.Combine(templateDir, htmlTemplateFileName)
@@ -117,7 +142,6 @@ type GenerateChartsCommandHandler
                 match result with
                 | Success (journal, _, _) ->
                     let ledger = fillLedger journal
-                    let json = totalBalanceJson ledger
 
                     let strExeFilePath =
                         System
@@ -132,10 +156,17 @@ type GenerateChartsCommandHandler
                     let templateDir =
                         Path.Combine(strWorkPath, "charts")
 
-                    let htmlTemplateFileName =
+                    generateHtml
+                        templateDir
                         "total-balance.html"
+                        (totalBalanceJson ledger)
+                        outputDir
 
-                    generateHtml templateDir htmlTemplateFileName json outputDir
+                    generateHtml
+                        templateDir
+                        "income-expenses.html"
+                        (incomeAndExpensesJson ledger)
+                        outputDir
 
                     return 0
                 | Failure (errorMsg, _, _) ->

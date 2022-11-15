@@ -117,10 +117,9 @@ type MovingAveragesCalculation =
       MovingAverageDays: int
       ExpectedMovingAverages: Result<BalanceHistory, string> }
 
-// todo 10: implement property tests for moving averages
 let randomBalanceHistoryMovingAveragesCalculation () =
     gen {
-        let maxDaysSpan = 100
+        let maxDaysSpan = 20
 
         let! permutatedAllDaysIndex = Array.init maxDaysSpan id |> Gen.shuffle
 
@@ -160,15 +159,65 @@ let randomBalanceHistoryMovingAveragesCalculation () =
                   ExpectedMovingAverages = Error ex.Message }
     }
 
-type CalculatingBalanceHistoryMovingAveragesTests(output: ITestOutputHelper) =
+type CalculatingBalanceHistoryMovingAveragesTests(_output: ITestOutputHelper) =
     [<Fact>]
     member this.``generating moving averages for the balance history``() =
         let arbCalculation =
             randomBalanceHistoryMovingAveragesCalculation ()
             |> Arb.fromGen
 
-        let datesAreSorted calculation = true
+        let datesAreSorted calculation =
+            match calculation.ExpectedMovingAverages with
+            | Ok movingAverages ->
+                movingAverages
+                |> List.map fst
+                |> List.pairwise
+                |> List.forall (fun (a, b) -> a <= b)
+            | Error _ -> true
+
+        let minDateIsHalfLengthLaterOfDaysInterval calculation =
+            match calculation.ExpectedMovingAverages with
+            | Ok movingAverages ->
+                if
+                    (calculation.MovingAverageDays
+                     <= (calculation.BalanceHistory |> List.length))
+                then
+                    let minDate, _ = movingAverages |> List.head
+
+                    let diff = calculation.MovingAverageDays / 2
+
+                    minDate = (calculation.BalanceHistory.Head |> fst)
+                        .AddDays(diff)
+                else
+                    true
+            | Error _ -> true
+
+        let maxDateIsHalfLengthEarlierOfDaysInterval calculation =
+            match calculation.ExpectedMovingAverages with
+            | Ok movingAverages ->
+                if
+                    (calculation.MovingAverageDays
+                     <= (calculation.BalanceHistory |> List.length))
+                then
+                    let maxDate, _ = movingAverages |> List.last
+
+                    let diff =
+                        (calculation.MovingAverageDays - 1) / 2
+
+                    maxDate = (calculation.BalanceHistory |> List.last |> fst)
+                        .AddDays(-diff)
+                else
+                    true
+            | Error _ -> true
 
         datesAreSorted
+        |> Prop.forAll arbCalculation
+        |> Check.QuickThrowOnFailure
+
+        minDateIsHalfLengthLaterOfDaysInterval
+        |> Prop.forAll arbCalculation
+        |> Check.QuickThrowOnFailure
+
+        maxDateIsHalfLengthEarlierOfDaysInterval
         |> Prop.forAll arbCalculation
         |> Check.QuickThrowOnFailure

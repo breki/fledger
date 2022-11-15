@@ -27,6 +27,10 @@ type Amount =
         { Value = a.Value + b.Value
           Commodity = a.Commodity }
 
+    static member (*)(amount: Amount, multiplier: int) =
+        { Value = amount.Value * (decimal multiplier)
+          Commodity = amount.Commodity }
+
     static member (/)(amount: Amount, divisor: int) =
         { Value = amount.Value / (decimal divisor)
           Commodity = amount.Commodity }

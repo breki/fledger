@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Total balance (in EUR)</title>
+    <title>Monthly income and expenses (in EUR)</title>
     <script src="https://d3js.org/d3.v7.min.js"></script>
 
     <style>
@@ -43,15 +43,10 @@
             .tickSize(-height);
 
         // Add Y axis
-        const yAxisBufferAmount = 5000;
-
         const yScale = d3.scaleLinear()
-            .domain([
-                d3.min(balanceData, function (d) {
-                    return d.v - yAxisBufferAmount;
-                }),
+            .domain([0,
                 d3.max(balanceData, function (d) {
-                    return d.v + yAxisBufferAmount;
+                    return d.v * 1.1;
                 })
             ])
             .range([height, 0]);

@@ -71,20 +71,12 @@ let addAmountToBalance
     |> Map.add date (balance.AddCommodity commodity newBalance)
 
 
-/// Returns the total multi-currency balance change for each day.
-let totalBalanceChangeHistory (ledger: Ledger) : BalanceHistory =
-    let processPosting
-        (balances: BalanceByDate)
-        (transaction: Transaction)
-        (posting: Posting)
-        : BalanceByDate =
-        let date = transaction.Date
-
-        match posting.Account.NameParts[0] with
-        | "assets" -> addAmountToBalance date posting.Amount balances
-        | "liabilities" -> addAmountToBalance date posting.Amount balances
-        | _ -> balances
-
+/// A generic function to calculate balance change history based on the
+/// provided processPosting function.
+let calculateBalanceChangeHistory
+    processPosting
+    (ledger: Ledger)
+    : BalanceHistory =
     let processTx balances (transaction: Transaction) =
         transaction.Postings
         |> List.fold
@@ -102,6 +94,17 @@ let totalBalanceChangeHistory (ledger: Ledger) : BalanceHistory =
     |> Map.toSeq
     |> Seq.sortBy fst
     |> Seq.toList
+
+
+/// Returns the total multi-currency balance change for each day.
+let totalBalanceChangeHistory =
+    calculateBalanceChangeHistory (fun balances transaction posting ->
+        let date = transaction.Date
+
+        match posting.Account.NameParts[0] with
+        | "assets" -> addAmountToBalance date posting.Amount balances
+        | "liabilities" -> addAmountToBalance date posting.Amount balances
+        | _ -> balances)
 
 
 /// Returns the total multi-currency balance for each day.
@@ -129,7 +132,7 @@ let toSingleCommodityBalanceHistory
     marketPrices
     commodity
     (multiCommodityBalanceHistory: BalanceHistory)
-    : CommodityBalanceHistory =
+    =
     multiCommodityBalanceHistory
     |> List.map (fun (date, multiCommodityBalance) ->
         (date,
@@ -172,6 +175,7 @@ let fullDatesBalanceHistory (balanceHistory: BalanceHistory) : BalanceHistory =
         @ [ balanceHistory |> List.last ]
 
 
+/// Calculates the moving averages of the balance history.
 let balanceHistoryMovingAverage
     (movingAverageDays: int)
     (balanceHistory: BalanceHistory)
@@ -194,3 +198,48 @@ let balanceHistoryMovingAverage
             (dateOfAverage, averageBalance))
     else
         failwith "movingAverageDays must be positive"
+
+/// Calculates the moving averages of the single-commodity balance history.
+let commodityBalanceHistoryMovingAverage
+    (movingAverageDays: int)
+    (balanceHistory: CommodityBalanceHistory)
+    : CommodityBalanceHistory =
+
+    if movingAverageDays > 0 then
+        let commodity =
+            (balanceHistory[0] |> snd).Commodity
+
+        let daysBefore = movingAverageDays / 2
+
+        balanceHistory
+        |> List.windowed movingAverageDays
+        |> List.map (fun window ->
+            let dateOfAverage, _ = window[daysBefore]
+
+            let averageBalance: Amount =
+                window
+                |> List.map snd
+                |> List.fold (+) (Amount.Zero commodity)
+                |> (fun amount -> amount / movingAverageDays)
+
+            (dateOfAverage, averageBalance))
+    else
+        failwith "movingAverageDays must be positive"
+
+
+let dailyIncome =
+    calculateBalanceChangeHistory (fun balances transaction posting ->
+        let date = transaction.Date
+
+        match posting.Account.NameParts[0] with
+        | "income" -> addAmountToBalance date posting.Amount balances
+        | _ -> balances)
+
+
+let dailyExpenses =
+    calculateBalanceChangeHistory (fun balances transaction posting ->
+        let date = transaction.Date
+
+        match posting.Account.NameParts[0] with
+        | "expenses" -> addAmountToBalance date posting.Amount balances
+        | _ -> balances)
