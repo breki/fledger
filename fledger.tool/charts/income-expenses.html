@@ -60,7 +60,7 @@
         svg.append("g").call(yAxis);
 
         renderBalanceSerie(svg, xScale, yScale, 0, "steelblue");
-        renderBalanceSerie(svg, xScale, yScale, 1, "darkred");
+        renderBalanceSerie(svg, xScale, yScale, 1, "#EC7063");
 
         function determineChartDimensions() {
             const margin = {top: 10, right: 30, bottom: 30, left: 60},
@@ -85,17 +85,18 @@
         }
 
         function renderBalanceSerie(svg, xScale, yScale, serieIndex, color) {
-            // Add the line
             svg.append("path")
                 .datum(balanceData[serieIndex]["data"])
-                .attr("fill", "none")
+                .attr("fill", color)
+                .attr("fill-opacity", 0.3)
                 .attr("stroke", color)
                 .attr("stroke-width", 1.5)
-                .attr("d", d3.line()
+                .attr("d", d3.area()
                     .x(function (d) {
                         return xScale(new Date(d.d))
                     })
-                    .y(function (d) {
+                    .y0(yScale(0))
+                    .y1(function (d) {
                         return yScale(d.v)
                     })
                 )
