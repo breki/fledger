@@ -71,10 +71,12 @@ let addAmountToBalance
     |> Map.add date (balance.AddCommodity commodity newBalance)
 
 
+type PostingFilter = BalanceByDate -> Transaction -> Posting -> BalanceByDate
+
 /// A generic function to calculate balance change history based on the
 /// provided processPosting function.
 let calculateBalanceChangeHistory
-    processPosting
+    (processPosting: PostingFilter)
     (ledger: Ledger)
     : BalanceHistory =
     let processTx balances (transaction: Transaction) =
@@ -243,3 +245,46 @@ let dailyExpenses =
         match posting.Account.NameParts[0] with
         | "expenses" -> addAmountToBalance date posting.Amount balances
         | _ -> balances)
+
+// todo 30: document this
+type PostingRouter = Posting -> int option
+
+let balancesChangeHistories
+    (postingRouter: PostingRouter)
+    (slotsCount: int)
+    (ledger: Ledger)
+    : BalanceHistory[] =
+
+    let routePosting
+        (date: Date)
+        (balancesHistories: BalanceByDate[])
+        (posting: Posting)
+        : BalanceByDate[] =
+        postingRouter posting
+        |> function
+            | Some slotIndex ->
+                let balanceHistory =
+                    balancesHistories[slotIndex]
+
+                let newBalance =
+                    addAmountToBalance date posting.Amount balanceHistory
+
+                Array.set balancesHistories slotIndex newBalance
+                balancesHistories
+            | None -> balancesHistories
+
+    let processTx
+        (balances: BalanceByDate[])
+        (transaction: Transaction)
+        : BalanceByDate[] =
+        transaction.Postings
+        |> List.fold (routePosting transaction.Date) balances
+
+    let initialState: BalanceByDate[] =
+        Array.init slotsCount (fun _ -> Map.empty)
+
+    ledger.Transactions
+    |> List.fold processTx initialState
+    |> Array.map Map.toSeq
+    |> Array.map (Seq.sortBy fst)
+    |> Array.map Seq.toList

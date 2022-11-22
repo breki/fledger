@@ -11,11 +11,13 @@ open FParsec
 open Newtonsoft.Json
 open Thoth.Json.Net
 open fledger.BalanceTypes
+open fledger.BasicTypes
 open fledger.Parsing.ParsingBasics
 open fledger.Parsing.ParsingJournal
 open fledger.AccountingFuncs
 open fledger.Ledger
 
+let eur = "EUR"
 
 let journalFileArgument =
     Argument<string>(
@@ -33,9 +35,21 @@ let outputDirOption =
     )
         .LegalFilePathsOnly()
 
-let totalBalanceJson ledger =
-    let eur = "EUR"
 
+let encodeDayBalance ((date, amount): CommodityBalanceOnDate) =
+    Encode.object
+        [ "d",
+          Encode.string (
+              date.ToString("yyyy-MM-dd", DateTimeFormatInfo.InvariantInfo)
+          )
+          "v", amount.Value |> Math.Round |> int |> Encode.int ]
+
+let encodeCommodityBalanceHistory (history: CommodityBalanceHistory) =
+    history
+    |> List.map encodeDayBalance
+    |> Encode.list
+
+let totalBalanceJson ledger =
     let balanceHistory =
         totalBalanceChangeHistory ledger
         |> absoluteTotalBalanceHistory
@@ -43,25 +57,13 @@ let totalBalanceJson ledger =
         // skip the situation before 2019 since it was not fully accounted for
         |> List.filter (fun (date, _) -> date >= DateTime(2019, 1, 1))
 
-    let encodeDayBalance ((date, amount): CommodityBalanceOnDate) =
-        Encode.object
-            [ "d",
-              Encode.string (
-                  date.ToString("yyyy-MM-dd", DateTimeFormatInfo.InvariantInfo)
-              )
-              "v", amount.Value |> Math.Round |> int |> Encode.int ]
-
     let json =
-        balanceHistory
-        |> List.map encodeDayBalance
-        |> Encode.list
+        balanceHistory |> encodeCommodityBalanceHistory
 
     json.ToString(formatting = Formatting.None)
 
 
 let incomeAndExpensesJson ledger =
-    let eur = "EUR"
-
     let income =
         dailyIncome ledger
         |> fullDatesBalanceHistory
@@ -78,27 +80,43 @@ let incomeAndExpensesJson ledger =
         |> commodityBalanceHistoryMovingAverage 90
         |> List.filter (fun (date, _) -> date >= DateTime(2019, 1, 1))
 
-    let allData =
-        [ "income", income
-          "expenses", expenses ]
-
-    let encodeData ((date, amount): CommodityBalanceOnDate) =
-        Encode.object
-            [ "d",
-              Encode.string (
-                  date.ToString("yyyy-MM-dd", DateTimeFormatInfo.InvariantInfo)
-              )
-              "v", amount.Value |> Math.Round |> int |> Encode.int ]
-
-    let encodeSerie (name, data) =
-        let serieData = data |> List.map encodeData
-
-        Encode.object
-            [ "serie", Encode.string name
-              "data", Encode.list serieData ]
+    let allSeriesData = [ income; expenses ]
 
     let json =
-        allData |> List.map encodeSerie |> Encode.list
+        allSeriesData
+        |> List.map encodeCommodityBalanceHistory
+        |> Encode.list
+
+    json.ToString(formatting = Formatting.None)
+
+
+let incomeAnalysisJson ledger =
+    let incomeRouter (posting: Posting) =
+        if posting.Account.FullName.StartsWith("income:Freelancing") then
+            Some 0
+        elif
+            posting.Account.FullName.StartsWith("income:Business:ScalableMaps")
+        then
+            Some 1
+        elif posting.Account.FullName.StartsWith("income") then
+            Some 2
+        else
+            None
+
+    let histories =
+        ledger
+        |> balancesChangeHistories incomeRouter 3
+        |> Array.map (fun history ->
+            history
+            |> absoluteTotalBalanceHistory
+            |> fullDatesBalanceHistory
+            |> toSingleCommodityBalanceHistory ledger.MarketPrices eur
+            |> List.map (fun (date, amount) -> (date, -amount)))
+
+    let json =
+        histories
+        |> Array.map encodeCommodityBalanceHistory
+        |> Encode.array
 
     json.ToString(formatting = Formatting.None)
 
@@ -184,6 +202,12 @@ type GenerateChartsCommandHandler
                         templateDir
                         "income-expenses.html"
                         (incomeAndExpensesJson ledger)
+                        outputDir
+
+                    generateHtml
+                        templateDir
+                        "income-analysis.html"
+                        (incomeAnalysisJson ledger)
                         outputDir
 
                     return 0

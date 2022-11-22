@@ -24,7 +24,7 @@
     function drawChart() {
         const {width, height, margin} = determineChartDimensions();
 
-        const allData = balanceData[0]["data"].concat(balanceData[1]["data"]);
+        const allData = balanceData[0].concat(balanceData[1]);
 
         // Add X axis --> it is a date format
         const xScale = d3.scaleTime()
@@ -45,8 +45,17 @@
             .tickSize(-height);
 
         // Add Y axis
+        const yAxisBufferAmount = 5000;
+
         const yScale = d3.scaleLinear()
-            .domain([0, 5000])
+            .domain([
+                d3.min(allData, function (d) {
+                    return d.v - yAxisBufferAmount;
+                }),
+                d3.max(allData, function (d) {
+                    return d.v + yAxisBufferAmount;
+                })
+            ])
             .range([height, 0]);
 
         const yAxis = d3.axisLeft(yScale)
@@ -86,7 +95,7 @@
 
         function renderBalanceSerie(svg, xScale, yScale, serieIndex, color) {
             svg.append("path")
-                .datum(balanceData[serieIndex]["data"])
+                .datum(balanceData[serieIndex])
                 .attr("fill", color)
                 .attr("fill-opacity", 0.3)
                 .attr("d", d3.area()

@@ -20,6 +20,8 @@ type Amount =
     static member Zero(commodity: string) =
         { Value = 0.0M; Commodity = commodity }
 
+    static member inline (~-)(a: Amount) = { a with Value = -a.Value }
+
     static member (+)(a: Amount, b: Amount) =
         if a.Commodity <> b.Commodity then
             failwith "Cannot add amounts of different commodities"
