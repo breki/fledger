@@ -89,7 +89,11 @@ let incomeAndExpensesJson ledger =
 
     json.ToString(formatting = Formatting.None)
 
-
+// todo 15: render stacked area charts for income
+// todo 16: add series names when generating
+// todo 17: use series names when rendering
+// todo 18: automatically adjust the chart to whatever number of series
+//   there are - use the pre-defined color palette
 let incomeAnalysisJson ledger =
     let incomeRouter (posting: Posting) =
         if posting.Account.FullName.StartsWith("income:Freelancing") then
@@ -98,20 +102,24 @@ let incomeAnalysisJson ledger =
             posting.Account.FullName.StartsWith("income:Business:ScalableMaps")
         then
             Some 1
-        elif posting.Account.FullName.StartsWith("income") then
+        elif posting.Account.FullName.StartsWith("income:Salary") then
             Some 2
+        elif posting.Account.FullName.StartsWith("income:Inheritance") then
+            None
+        elif posting.Account.FullName.StartsWith("income") then
+            Some 3
         else
             None
 
     let histories =
         ledger
-        |> balancesChangeHistories incomeRouter 3
+        |> balancesChangeHistories incomeRouter 4
         |> Array.map (fun history ->
             history
-            |> absoluteTotalBalanceHistory
             |> fullDatesBalanceHistory
             |> toSingleCommodityBalanceHistory ledger.MarketPrices eur
-            |> List.map (fun (date, amount) -> (date, -amount)))
+            |> List.map (fun (date, amount) -> date, amount * -30)
+            |> commodityBalanceHistoryMovingAverage 90)
 
     let json =
         histories

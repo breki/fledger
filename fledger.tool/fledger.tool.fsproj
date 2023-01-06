@@ -34,6 +34,7 @@
       <Content Include="charts\income-analysis.html">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </Content>
+      <Content Include="charts\sample-stack.html" />
       <Compile Include="Commands\GenerateCharts.fs" />
       <Compile Include="Commands\Program.fs" />
     </ItemGroup>
