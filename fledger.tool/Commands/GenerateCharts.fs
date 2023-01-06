@@ -37,17 +37,17 @@ let outputDirOption =
 
 
 let encodeDayBalance ((date, amount): CommodityBalanceOnDate) =
-    Encode.object
-        [ "d",
-          Encode.string (
-              date.ToString("yyyy-MM-dd", DateTimeFormatInfo.InvariantInfo)
-          )
-          "v", amount.Value |> Math.Round |> int |> Encode.int ]
+    Encode.object [ "d",
+                    Encode.string (
+                        date.ToString(
+                            "yyyy-MM-dd",
+                            DateTimeFormatInfo.InvariantInfo
+                        )
+                    )
+                    "v", amount.Value |> Math.Round |> int |> Encode.int ]
 
 let encodeCommodityBalanceHistory (history: CommodityBalanceHistory) =
-    history
-    |> List.map encodeDayBalance
-    |> Encode.list
+    history |> List.map encodeDayBalance |> Encode.list
 
 let totalBalanceJson ledger =
     let balanceHistory =
@@ -57,8 +57,7 @@ let totalBalanceJson ledger =
         // skip the situation before 2019 since it was not fully accounted for
         |> List.filter (fun (date, _) -> date >= DateTime(2019, 1, 1))
 
-    let json =
-        balanceHistory |> encodeCommodityBalanceHistory
+    let json = balanceHistory |> encodeCommodityBalanceHistory
 
     json.ToString(formatting = Formatting.None)
 
@@ -83,24 +82,20 @@ let incomeAndExpensesJson ledger =
     let allSeriesData = [ income; expenses ]
 
     let json =
-        allSeriesData
-        |> List.map encodeCommodityBalanceHistory
-        |> Encode.list
+        allSeriesData |> List.map encodeCommodityBalanceHistory |> Encode.list
 
     json.ToString(formatting = Formatting.None)
 
-// todo 15: render stacked area charts for income
-// todo 16: add series names when generating
-// todo 17: use series names when rendering
-// todo 18: automatically adjust the chart to whatever number of series
+// todo XX 15: render stacked area charts for income
+// todo XX 16: add series names when generating
+// todo XX 17: use series names when rendering
+// todo XX 18: automatically adjust the chart to whatever number of series
 //   there are - use the pre-defined color palette
 let incomeAnalysisJson ledger =
     let incomeRouter (posting: Posting) =
         if posting.Account.FullName.StartsWith("income:Freelancing") then
             Some 0
-        elif
-            posting.Account.FullName.StartsWith("income:Business:ScalableMaps")
-        then
+        elif posting.Account.FullName.StartsWith("income:Business:ScalableMaps") then
             Some 1
         elif posting.Account.FullName.StartsWith("income:Salary") then
             Some 2
@@ -122,27 +117,21 @@ let incomeAnalysisJson ledger =
             |> commodityBalanceHistoryMovingAverage 90)
 
     let json =
-        histories
-        |> Array.map encodeCommodityBalanceHistory
-        |> Encode.array
+        histories |> Array.map encodeCommodityBalanceHistory |> Encode.array
 
     json.ToString(formatting = Formatting.None)
 
 let generateHtml templateDir htmlTemplateFileName json outputDir =
-    let htmlTemplateFile =
-        Path.Combine(templateDir, htmlTemplateFileName)
+    let htmlTemplateFile = Path.Combine(templateDir, htmlTemplateFileName)
 
-    let htmlTemplateBody =
-        File.ReadAllText(htmlTemplateFile)
+    let htmlTemplateBody = File.ReadAllText(htmlTemplateFile)
 
-    let htmlBody =
-        htmlTemplateBody.Replace("[placeholder_data]", json)
+    let htmlBody = htmlTemplateBody.Replace("[placeholder_data]", json)
 
     if not (Directory.Exists(outputDir)) then
         Directory.CreateDirectory(outputDir) |> ignore
 
-    let fullHtmlFileName =
-        Path.Combine(outputDir, htmlTemplateFileName)
+    let fullHtmlFileName = Path.Combine(outputDir, htmlTemplateFileName)
 
     File.WriteAllText(fullHtmlFileName, htmlBody)
 
@@ -154,8 +143,7 @@ type GenerateChartsCommandHandler
         journalFileArgument,
         outputDirOption: Option<string>
     ) =
-    member this.journalFileArgument =
-        journalFileArgument
+    member this.journalFileArgument = journalFileArgument
 
     member this.outputDirOption = outputDirOption
 
@@ -194,11 +182,9 @@ type GenerateChartsCommandHandler
                             .GetExecutingAssembly()
                             .Location
 
-                    let strWorkPath =
-                        Path.GetDirectoryName(strExeFilePath)
+                    let strWorkPath = Path.GetDirectoryName(strExeFilePath)
 
-                    let templateDir =
-                        Path.Combine(strWorkPath, "charts")
+                    let templateDir = Path.Combine(strWorkPath, "charts")
 
                     generateHtml
                         templateDir
@@ -225,8 +211,7 @@ type GenerateChartsCommandHandler
             }
 
 let generateChartsCommand () : Command =
-    let cmd =
-        Command("generate-charts", "Generate charts from the ledger")
+    let cmd = Command("generate-charts", "Generate charts from the ledger")
 
     cmd.AddArgument(journalFileArgument)
     cmd.AddOption(outputDirOption)

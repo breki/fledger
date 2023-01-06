@@ -246,7 +246,6 @@ let dailyExpenses =
         | "expenses" -> addAmountToBalance date posting.Amount balances
         | _ -> balances)
 
-// todo 30: document this
 type PostingRouter = Posting -> int option
 
 let balancesChangeHistories
