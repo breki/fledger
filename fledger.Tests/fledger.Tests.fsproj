@@ -25,6 +25,7 @@
         <Compile Include="Todo.fs" />
         <Compile Include="accounting functions\full dates balance history.fs" />
         <Compile Include="accounting functions\balance history moving averages.fs" />
+        <Compile Include="validating\validating chronological order.fs" />
     </ItemGroup>
 
     <ItemGroup>
