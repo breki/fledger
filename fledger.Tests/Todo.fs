@@ -1,7 +1,6 @@
 ﻿module fledger.Tests.Todo
 
 // todo 10: implement journal validator
-// todo 12: validator: transactions should be in chronological order
 // todo 13: validator: total amount of a transaction should be 0
 // todo 14: validator: the expected account totals should be validated
 

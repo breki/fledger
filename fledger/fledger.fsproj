@@ -30,6 +30,7 @@
       <Compile Include="Ledger.fs" />
       <Compile Include="BalanceTypes.fs" />
       <Compile Include="AccountingFuncs.fs" />
+      <Compile Include="ValidationFuncs.fs" />
     </ItemGroup>
 
     <ItemGroup>

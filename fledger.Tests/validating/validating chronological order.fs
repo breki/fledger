@@ -2,71 +2,31 @@
 
 open System
 open Xunit
-open Swensen.Unquote
 open fledger.Ledger
-open fledger.BasicTypes
-
-// type Ledger =
-//     { Accounts: Map<AccountRef, Account>
-//       Transactions: Transaction list
-//       MarketPrices: MarketPrices }
-
-// type Account = { Name: AccountRef }
-
-// type AccountRef =
-//     { FullName: AccountName
-//       NameParts: string[] }
-//
-//     static member Create(fullName: string) =
-//         let parts = fullName.Split(':')
-//
-//         { FullName = fullName
-//           NameParts = parts }
-
-// type Transaction =
-//     { Date: Date
-//       Status: TransactionStatus
-//       Description: string option
-//       Payee: string option
-//       Note: string option
-//       Comment: string option
-//       Postings: Posting list }
-
-
-let transactionsAreChronologicallyOrdered ledger =
-    ledger.Transactions
-    |> List.pairwise
-    |> List.forall (fun (t1, t2) -> t1.Date <= t2.Date)
+open fledger.ValidationFuncs
+open fledger.Tests.DataBuilders
+open Swensen.Unquote
 
 [<Fact>]
 let ``transactions should be in chronological order`` () =
     // create ledger with single account and two transactions
 
-    let accountRef = AccountRef.Create "Assets:Checking"
-    let account = { Name = accountRef }
+    let account = Account.Create "Assets:Checking"
 
-    // todo 5: we need a tx builder
-    let tx1 =
-        { Date = DateTime(2023, 1, 7)
-          Status = TransactionStatus.Unmarked
-          Description = None
-          Payee = None
-          Note = None
-          Comment = None
-          Postings = [] }
+    let tx1 = withTransaction ()
 
     let tx2 =
-        { Date = DateTime(2023, 1, 6)
-          Status = TransactionStatus.Unmarked
-          Description = None
-          Payee = None
-          Note = None
-          Comment = None
-          Postings = [] }
+        withTransaction ()
+        |> onDate (DateTime(2023, 1, 6))
+        |> withDescription "not in order"
 
-    let ledger =
-        { Accounts = [ accountRef, account ] |> Map.ofList
-          Transactions = [ tx1; tx2 ]
-          MarketPrices = { Prices = Map.empty } }
+    let ledger = withLedger [ account ] [ tx1; tx2 ]
 
-    test <@ transactionsAreChronologicallyOrdered ledger = false @>
+    let result = transactionsAreChronologicallyOrdered ledger
+
+    test <@ Result.isError result @>
+
+    test
+        <@ result = Result.Error(
+            { Message = "Transaction out of order: 2023/01/06 not in order" }
+        ) @>

@@ -14,6 +14,7 @@ open fledger.Parsing.ParsingJournal
 open fledger.Ledger
 open fledger.BalanceTypes
 open fledger.AccountingFuncs
+open fledger.ValidationFuncs
 
 open Swensen.Unquote
 
@@ -22,8 +23,7 @@ type RealisticJournalParsingTests(output: ITestOutputHelper) =
     // [<Fact(Skip = "Only to be run to debug problems "
     //               + "with parsing realistic journals")>]
     member this.``parsing realistic journal``() =
-        let text =
-            File.ReadAllText(@"D:\ledger\igor.ledger")
+        let text = File.ReadAllText(@"D:\ledger\igor.ledger")
 
         let result =
             runParserOnString pJournal { Something = 0 } "test stream" text
@@ -34,23 +34,21 @@ type RealisticJournalParsingTests(output: ITestOutputHelper) =
 
             let ledger = fillLedger journal
 
+            let result = transactionsAreChronologicallyOrdered ledger
+            test <@ Result.isOk result @>
             test <@ ledger.Accounts.Count > 20 @>
             test <@ ledger.Transactions.Length > 1000 @>
 
-            let accountBalances =
-                accountsBalances ledger
+            let _accountBalances = accountsBalances ledger
 
             let totalBalanceHistory =
-                totalBalanceChangeHistory ledger
-                |> absoluteTotalBalanceHistory
+                totalBalanceChangeHistory ledger |> absoluteTotalBalanceHistory
 
-            let finalTotalBalance =
-                totalBalanceHistory |> List.last
+            let finalTotalBalance = totalBalanceHistory |> List.last
 
             let finalDate = fst finalTotalBalance
 
-            let finalTotalBalanceAmounts =
-                snd finalTotalBalance
+            let finalTotalBalanceAmounts = snd finalTotalBalance
 
             let finalTotalBalanceInEur =
                 finalTotalBalanceAmounts

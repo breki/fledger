@@ -6,7 +6,12 @@ open fledger.BasicTypes
 open fledger.Journal
 open Text
 
-type Account = { Name: AccountRef }
+type Account =
+    { Name: AccountRef }
+
+    static member Create(fullName: string) =
+        { Name = AccountRef.Create(fullName) }
+
 
 [<Struct>]
 [<StructuredFormatDisplay("{DisplayText}")>]
@@ -56,13 +61,9 @@ type Posting =
         |> append "  "
         |> append (this.Amount.ToString())
         |> ifDo this.TotalPrice.IsSome (fun x ->
-            x
-            |> append " @@ "
-            |> append (this.TotalPrice.Value.ToString()))
+            x |> append " @@ " |> append (this.TotalPrice.Value.ToString()))
         |> ifDo this.ExpectedBalance.IsSome (fun x ->
-            x
-            |> append " = "
-            |> append (this.ExpectedBalance.Value.ToString()))
+            x |> append " = " |> append (this.ExpectedBalance.Value.ToString()))
         |> toString
 
 type Transaction =
@@ -74,19 +75,22 @@ type Transaction =
       Comment: string option
       Postings: Posting list }
 
-    override this.ToString() =
+    member this.DateStr =
+        this.Date.ToString("yyyy/MM/dd", DateTimeFormatInfo.InvariantInfo)
+
+    member this.FullDescription =
         buildString ()
-        |> append (
-            this.Date.ToString("yyyy/MM/dd", DateTimeFormatInfo.InvariantInfo)
-        )
-        |> append " "
-        |> ifDo (this.Status = TransactionStatus.Cleared) (append "*")
-        |> ifDo (this.Status = TransactionStatus.Pending) (append "!")
-        |> ifDo (this.Status = TransactionStatus.Unmarked) (append " ")
         |> ifDo this.Description.IsSome (fun x ->
             x |> append this.Description.Value)
         |> ifDo this.Payee.IsSome (fun x -> x |> append ("|" + this.Payee.Value))
         |> ifDo this.Note.IsSome (fun x -> x |> append ("|" + this.Note.Value))
+        |> toString
+
+    override this.ToString() =
+        buildString ()
+        |> append this.DateStr
+        |> append " "
+        |> append this.FullDescription
         |> ifDo this.Comment.IsSome (fun x ->
             x |> append ("; " + this.Comment.Value))
         |> newLine
@@ -123,13 +127,10 @@ type MarketPrices =
                 |> Option.defaultValue Map.empty
 
             let prices =
-                prices
-                |> Map.tryFind commodity2
-                |> Option.defaultValue []
+                prices |> Map.tryFind commodity2 |> Option.defaultValue []
 
             let closestPriceAfterDate =
-                prices
-                |> List.tryFind (fun (date', _) -> date' <= date)
+                prices |> List.tryFind (fun (date', _) -> date' <= date)
 
             let priceAtDate =
                 match closestPriceAfterDate with
@@ -173,8 +174,7 @@ let addMarketPrice (price: MarketPrice) (prices: MarketPrices) : MarketPrices =
             (fromCommodityPrices
              |> Map.add
                  toCommodity
-                 ((price.Date, price.Price)
-                  :: fromCommodityToCommodityPrices))
+                 ((price.Date, price.Price) :: fromCommodityToCommodityPrices))
 
     { Prices = prices }
 
@@ -229,8 +229,7 @@ let fillLedger (journal: Journal) : Ledger =
         | DefaultCommodity defaultCommodity ->
             { state with DefaultCommodity = defaultCommodity.Commodity }
         | MarketPrice marketPrice ->
-            let price =
-                toLedgerAmount state marketPrice.Price
+            let price = toLedgerAmount state marketPrice.Price
 
             { state with
                 MarketPrices =
@@ -273,10 +272,8 @@ let fillLedger (journal: Journal) : Ledger =
           Accounts = Map.empty
           Transactions = [] }
 
-    let finalState =
-        journal.Items
-        |> List.fold processJournalItem initialState
+    let finalState = journal.Items |> List.fold processJournalItem initialState
 
-    { Transactions = finalState.Transactions
+    { Transactions = finalState.Transactions |> List.rev
       Accounts = finalState.Accounts
       MarketPrices = finalState.MarketPrices |> sortMarketPrices }
