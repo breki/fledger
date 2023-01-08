@@ -3,23 +3,45 @@
 open fledger.BasicTypes
 open fledger.Ledger
 
+/// Represents a dictionary of balances for one or more commodities.
 type MultiCommodityBalance =
     { Commodities: Map<Commodity, Amount> }
+
     static member FromCommodities(commodities: Map<Commodity, Amount>) =
         { Commodities = commodities }
 
+    /// Constructs the balances of commodities from a sequence of amounts.
+    /// The same commodity can appear multiple times in the sequence - the
+    /// method will sum the amounts of the same commodity.
     static member FromAmounts(amounts: Amount seq) : MultiCommodityBalance =
-        { Commodities =
+        // calculate balances for each commodity from the sequence of amounts
+        let balances =
             amounts
-            |> Seq.map (fun amount -> (amount.Commodity, amount))
-            |> Map.ofSeq }
+            |> Seq.fold
+                (fun (balances: Map<Commodity, Amount>) amount ->
+                    let commodity = amount.Commodity
 
-    static member Empty =
-        MultiCommodityBalance.FromCommodities Map.empty
+                    let newBalances =
+                        match balances.TryGetValue commodity with
+                        | true, balance ->
+                            balances.Add(commodity, balance + amount)
+                        | false, _ -> balances.Add(commodity, amount)
+
+                    newBalances)
+                Map.empty
+
+        { Commodities = balances }
+
+    static member Empty = MultiCommodityBalance.FromCommodities Map.empty
 
     member this.AddCommodity commodity balance =
-        let newCommodities =
-            this.Commodities.Add(commodity, balance)
+        let newCommodities = this.Commodities.Add(commodity, balance)
+
+        MultiCommodityBalance.FromCommodities newCommodities
+
+    /// Returns the balance of only the commodities that match the predicate.
+    member this.Filter predicate =
+        let newCommodities = this.Commodities |> Map.filter predicate
 
         MultiCommodityBalance.FromCommodities newCommodities
 

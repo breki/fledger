@@ -4,6 +4,7 @@ open System
 
 open fledger.BasicTypes
 
+// todo 2: record line number(s) for each journal items
 type TransactionInfo =
     { Date: Date
       Status: TransactionStatus

@@ -200,6 +200,7 @@ type Ledger =
       Transactions: Transaction list
       MarketPrices: MarketPrices }
 
+// todo 5: fillLedger should support returning errors
 let fillLedger (journal: Journal) : Ledger =
     let toLedgerAmount state (amount: JournalAmount) =
         match amount.Commodity with
@@ -231,6 +232,7 @@ let fillLedger (journal: Journal) : Ledger =
         | MarketPrice marketPrice ->
             let price = toLedgerAmount state marketPrice.Price
 
+            // todo 6: check the commodity exists
             { state with
                 MarketPrices =
                     state.MarketPrices
@@ -239,6 +241,10 @@ let fillLedger (journal: Journal) : Ledger =
                           Commodity = marketPrice.Commodity
                           Price = price } }
         | Transaction transaction ->
+            // todo 7: check the commodity exists
+            // todo 8: check the account exists
+            // todo 9: check the transactions are in chronological order
+            // todo 10: check the transaction is balanced
             { state with
                 Transactions =
                     { Date = transaction.Info.Date
