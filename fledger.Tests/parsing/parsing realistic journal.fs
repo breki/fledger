@@ -34,7 +34,7 @@ type RealisticJournalParsingTests(output: ITestOutputHelper) =
 
             let ledger = fillLedger journal
 
-            let result = transactionsAreChronologicallyOrdered ledger
+            let result = validateLedger ledger
             test <@ Result.isOk result @>
             test <@ ledger.Accounts.Count > 20 @>
             test <@ ledger.Transactions.Length > 1000 @>
