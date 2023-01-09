@@ -18,6 +18,7 @@
       <Compile Include="Text.fs" />
       <Compile Include="BasicTypes.fs" />
       <Compile Include="Journal.fs" />
+      <Compile Include="Parsing\ParsingUtils.fs" />
       <Compile Include="Parsing\ParsingBasics.fs" />
       <Compile Include="Parsing\ParsingComment.fs" />
       <Compile Include="Parsing\ParsingAmounts.fs" />

@@ -4,7 +4,6 @@ open System
 
 open fledger.BasicTypes
 
-// todo 2: record line number(s) for each journal items
 type TransactionInfo =
     { Date: Date
       Status: TransactionStatus
@@ -46,4 +45,4 @@ type JournalItem =
     | MarketPrice of MarketPriceDirective
     | Transaction of TransactionDirective
 
-type Journal = { Items: JournalItem list }
+type Journal = { Items: (int64 * JournalItem) list }

@@ -215,7 +215,10 @@ let fillLedger (journal: Journal) : Ledger =
             | None -> invalidOp "No default commodity"
 
 
-    let processJournalItem (state: LedgerFillingState) journalItem =
+    let processJournalItem
+        (state: LedgerFillingState)
+        (_lineNumber, journalItem)
+        =
         match journalItem with
         | Account account ->
             { state with

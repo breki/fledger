@@ -7,10 +7,10 @@ open fledger.BasicTypes
 open fledger.Journal
 open fledger.Parsing.ParsingBasics
 open fledger.Parsing.ParsingAmounts
+open fledger.Parsing.ParsingUtils
 
 // status character = "!" | "*"
-let pTxStatus<'T> : Parser<char, 'T> =
-    pchar '!' <|> pchar '*' <??> "tx status"
+let pTxStatus<'T> : Parser<char, 'T> = pchar '!' <|> pchar '*' <??> "tx status"
 
 // tx description and comment
 //    = [tx description], ["|", [payee], ["|", [note]]],
@@ -19,8 +19,7 @@ let pTxDescriptionAndComment<'T> : Parser<string option * string option * string
     opt (manyChars (noneOf "|;\n"))
     .>>. opt (pstring "|" >>. manyChars (noneOf "|;\n"))
     .>>. opt (pstring "|" >>. manyChars (noneOf ";\n"))
-    .>>. ((pstring ";" >>. opt (restOfLine true))
-          <|> opt (restOfLine true))
+    .>>. ((pstring ";" >>. opt (restOfLine true)) <|> opt (restOfLine true))
     <??> "tx description and comment"
     |>> fun (((description, payee), note), comment) ->
             (trimStringOptional description,
@@ -51,33 +50,25 @@ let pTxFirstLine<'T> : Parser<TransactionInfo, 'T> =
     <??> "tx first line"
 
 let pAmountSeparator<'T> : Parser<string, 'T> =
-    (pstring " " .>> (pstring " ") |> attempt
-     <??> "amount separator")
+    (pstring " " .>> (pstring " ") |> attempt <??> "amount separator")
 
 let pAccountNameInTx<'T> : Parser<AccountRef, 'T> =
-    many1CharsTill pAccountChar pAmountSeparator
-    |>> AccountRef.Create
+    many1CharsTill pAccountChar pAmountSeparator |>> AccountRef.Create
     <??> "account name"
 
 let pAccountRefInTx<'T> : Parser<AccountRef, 'T> =
-    pAccountNameInTx .>> whitespace
-    <??> "account reference"
+    pAccountNameInTx .>> whitespace <??> "account reference"
 
 let pTotalPriceIndicator<'T> : Parser<unit, 'T> =
-    pstring "@@" >>% ()
-    <??> "total price indicator (@@)"
+    pstring "@@" >>% () <??> "total price indicator (@@)"
 
 let pTotalPrice<'T> : Parser<JournalAmount, 'T> =
-    (whitespace1 >>? pTotalPriceIndicator
-     .>>? whitespace1
-     >>. pAmount)
+    (whitespace1 >>? pTotalPriceIndicator .>>? whitespace1 >>. pAmount)
     |> attempt
     <??> "total price"
 
 let pExpectedBalance<'T> : Parser<JournalAmount, 'T> =
-    (whitespace >>? (pstring "=") .>> whitespace
-     >>. pAmount)
-    |> attempt
+    (whitespace >>? (pstring "=") .>> whitespace >>. pAmount) |> attempt
     <??> "expected balance"
 
 let pPostingLineActual<'T> : Parser<PostingLine option, 'T> =
@@ -95,15 +86,14 @@ let pPostingLineActual<'T> : Parser<PostingLine option, 'T> =
     <??> "posting line"
 
 let pPostingLine<'T> : Parser<PostingLine option, 'T> =
-    attempt pPostingLineActual
-    <|> (pEmptyLine >>% None)
-    <??> "posting line"
+    attempt pPostingLineActual <|> (pEmptyLine >>% None) <??> "posting line"
 
 let pPostingLines<'T> : Parser<PostingLine list, 'T> =
-    many pPostingLine |>> filterOutNone
-    <??> "posting lines"
+    many pPostingLine |>> filterOutNone <??> "posting lines"
 
-let pTx<'T> : Parser<TransactionDirective, 'T> =
-    pTxFirstLine .>>. pPostingLines
-    |>> (fun (info, postings) -> { Info = info; Postings = postings })
+let pTx<'T> : Parser<int64 * TransactionDirective, 'T> =
+    pTxFirstLine .>>. pPostingLines |> withPos
+    |>> (fun x ->
+        let info, postings = x.Value
+        (x.Start.Line, { Info = info; Postings = postings }))
     <??> "tx"

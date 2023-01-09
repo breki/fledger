@@ -14,6 +14,8 @@ open FsCheck
 open FParsec
 open Xunit.Abstractions
 
+// todo 3: add comments to the test
+
 let chooseFromRandomJournal () =
     gen {
         let! hasEmptyLinesBetweenTxs = Arb.from<bool>.Generator
@@ -54,22 +56,25 @@ account assets:current assets:NLB
             + String.Concat(Enumerable.Repeat(txString, txCount))
 
         let expectedStartingItems =
-            [ { Value = 1000.00m
-                Commodity = Some "EUR" }
-              |> DefaultCommodity
-              Commodity("EUR")
-              Commodity("USD")
-              MarketPrice(
-                  { Date = DateTime(2018, 11, 1)
-                    Commodity = "USD"
-                    Price =
-                      { Value = 0.877m
-                        Commodity = Some "EUR" } }
-              )
-              Account(
-                  { Account = "assets:current assets:NLB" |> AccountRef.Create
-                    Subdirectives = [ "note  (type: BANK)" ] }
-              ) ]
+            [ (1L,
+               { Value = 1000.00m
+                 Commodity = Some "EUR" }
+               |> DefaultCommodity)
+              (3L, Commodity("EUR"))
+              (4L, Commodity("USD"))
+              (6L,
+               MarketPrice(
+                   { Date = DateTime(2018, 11, 1)
+                     Commodity = "USD"
+                     Price =
+                       { Value = 0.877m
+                         Commodity = Some "EUR" } }
+               ))
+              (8L,
+               Account(
+                   { Account = "assets:current assets:NLB" |> AccountRef.Create
+                     Subdirectives = [ "note  (type: BANK)" ] }
+               )) ]
 
         let expectedTransaction =
             { Info =
@@ -81,16 +86,14 @@ account assets:current assets:NLB
                   Comment = Some "this is a comment" }
               Postings =
                 [ { Account =
-                      "expenses:Business:Service charges"
-                      |> AccountRef.Create
+                      "expenses:Business:Service charges" |> AccountRef.Create
                     Amount =
                       { Value = 0.39m
                         Commodity = Some "EUR" }
                     TotalPrice = None
                     ExpectedBalance = None }
                   { Account =
-                      "expenses:Business:Employment Costs"
-                      |> AccountRef.Create
+                      "expenses:Business:Employment Costs" |> AccountRef.Create
                     Amount = { Value = 4.25m; Commodity = None }
                     TotalPrice =
                       Some
@@ -98,8 +101,7 @@ account assets:current assets:NLB
                             Commodity = Some "USD" }
                     ExpectedBalance = None }
                   { Account =
-                      "assets:current assets:Sparkasse"
-                      |> AccountRef.Create
+                      "assets:current assets:Sparkasse" |> AccountRef.Create
                     Amount =
                       { Value = -4.64m
                         Commodity = Some "EUR" }
@@ -110,8 +112,11 @@ account assets:current assets:NLB
                             Commodity = Some "EUR" } } ] }
 
         let expectedTransactions =
-            (Enumerable.Repeat(Transaction expectedTransaction, txCount)
-             |> Seq.toList)
+            List.init txCount (fun i ->
+                (11L
+                 + (i |> int64)
+                   * (5L + (if hasEmptyLinesBetweenTxs then 3L else 0L)),
+                 Transaction expectedTransaction))
 
         let expectedJournal =
             { Items = expectedStartingItems @ expectedTransactions }
@@ -127,8 +132,7 @@ account assets:current assets:NLB
 type JournalParsingTests(output: ITestOutputHelper) =
     [<Fact>]
     member this.``parsing journal``() =
-        let arbJournal =
-            chooseFromRandomJournal () |> Arb.fromGen
+        let arbJournal = chooseFromRandomJournal () |> Arb.fromGen
 
         let journalIsParsedCorrectly (_, expectedTransaction, parserResult) =
             match parserResult with

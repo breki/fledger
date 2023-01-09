@@ -11,8 +11,8 @@ open fledger.Parsing.ParsingDefaultCommodityDirective
 open fledger.Parsing.ParsingMarketPriceDirective
 open fledger.Parsing.ParsingTransactions
 
-let pJournalItem<'T> : Parser<JournalItem option, 'T> =
-    (pTx |>> Transaction |>> Some)
+let pJournalItem<'T> : Parser<(int64 * JournalItem) option, 'T> =
+    (pTx |>> (fun (line, tx) -> (line, Transaction tx)) |>> Some)
     <|> (pComment |>> Some)
     <|> (pCommodityDirective |>> Some)
     <|> (pDefaultCommodity |>> Some)

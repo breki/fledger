@@ -27,17 +27,13 @@ let chooseArbitraryAccountDirective () =
 
         let expectedValue =
             { Account =
-                "assets:current assets:Revolut/test"
-                |> AccountRef.Create
-              Subdirectives =
-                [ "note  (type: BANK)"
-                  "note  (type: BANK)" ] }
+                "assets:current assets:Revolut/test" |> AccountRef.Create
+              Subdirectives = [ "note  (type: BANK)"; "note  (type: BANK)" ] }
             |> Account
 
-        let result =
-            runParserOnString pAccountDirective () "test stream" text
+        let result = runParserOnString pAccountDirective () "test stream" text
 
-        return textBuilder, expectedValue, result
+        return textBuilder, (1L, expectedValue), result
     }
 
 type AccountDirectiveParsingTests(output: ITestOutputHelper) =
