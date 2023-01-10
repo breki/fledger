@@ -188,21 +188,25 @@ let sortMarketPrices (prices: MarketPrices) : MarketPrices =
 
     { Prices = prices }
 
+/// An error encountered while filling the ledger from a journal.
+type LedgerError = { Message: string; Line: int64 }
+
 type LedgerFillingState =
     { Commodities: Set<Commodity>
       DefaultCommodity: string option
       MarketPrices: MarketPrices
       Accounts: Map<AccountRef, Account>
-      Transactions: Transaction list }
+      Transactions: Transaction list
+      Errors: LedgerError list }
+
+    member this.withErrors(errors) =
+        { this with Errors = this.Errors |> List.append errors }
 
 type Ledger =
     { Accounts: Map<AccountRef, Account>
       Transactions: Transaction list
       MarketPrices: MarketPrices }
 
-type LedgerError = { Message: string; Line: int }
-
-// todo 5: fillLedger should support returning errors
 let fillLedger (journal: Journal) : Result<Ledger, LedgerError list> =
     let toLedgerAmount state (amount: JournalAmount) =
         match amount.Commodity with
@@ -219,7 +223,7 @@ let fillLedger (journal: Journal) : Result<Ledger, LedgerError list> =
 
     let processJournalItem
         (state: LedgerFillingState)
-        (_lineNumber, journalItem)
+        (lineNumber, journalItem)
         =
         match journalItem with
         | Account account ->
@@ -233,18 +237,49 @@ let fillLedger (journal: Journal) : Result<Ledger, LedgerError list> =
         | Commodity commodity ->
             { state with Commodities = state.Commodities.Add commodity }
         | DefaultCommodity defaultCommodity ->
-            { state with DefaultCommodity = defaultCommodity.Commodity }
+            match defaultCommodity.Commodity with
+            | Some commodity ->
+                if state.Commodities.Contains commodity then
+                    { state with DefaultCommodity = defaultCommodity.Commodity }
+                else
+                    state.withErrors
+                        [ { Message = $"Commodity '%s{commodity}' not defined."
+                            Line = lineNumber } ]
+            | None -> invalidOp "No default commodity"
         | MarketPrice marketPrice ->
-            let price = toLedgerAmount state marketPrice.Price
+            let errors1 =
+                if state.Commodities.Contains marketPrice.Commodity then
+                    []
+                else
+                    [ { Message =
+                          $"Commodity '%s{marketPrice.Commodity}' not defined."
+                        Line = lineNumber } ]
 
-            // todo 6: check the commodity exists
-            { state with
-                MarketPrices =
-                    state.MarketPrices
-                    |> addMarketPrice
-                        { Date = marketPrice.Date
-                          Commodity = marketPrice.Commodity
-                          Price = price } }
+            let errors2 =
+                match marketPrice.Price.Commodity with
+                | Some commodity ->
+                    if state.Commodities.Contains commodity then
+                        []
+                    else
+                        [ { Message = $"Commodity '%s{commodity}' not defined."
+                            Line = lineNumber } ]
+                | None -> []
+
+            let errors = errors1 @ errors2
+
+            if errors.Length = 0 then
+                let price = toLedgerAmount state marketPrice.Price
+
+                { state with
+                    MarketPrices =
+                        state.MarketPrices
+                        |> addMarketPrice
+                            { Date = marketPrice.Date
+                              Commodity = marketPrice.Commodity
+                              Price = price } }
+            else
+                state.withErrors errors
+
         | Transaction transaction ->
             // todo 7: check the commodity exists
             // todo 8: check the account exists
@@ -281,11 +316,15 @@ let fillLedger (journal: Journal) : Result<Ledger, LedgerError list> =
           DefaultCommodity = None
           MarketPrices = { Prices = Map.empty }
           Accounts = Map.empty
-          Transactions = [] }
+          Transactions = []
+          Errors = [] }
 
     let finalState = journal.Items |> List.fold processJournalItem initialState
 
-    Ok
-        { Transactions = finalState.Transactions |> List.rev
-          Accounts = finalState.Accounts
-          MarketPrices = finalState.MarketPrices |> sortMarketPrices }
+    if finalState.Errors |> List.isEmpty then
+        Ok
+            { Transactions = finalState.Transactions |> List.rev
+              Accounts = finalState.Accounts
+              MarketPrices = finalState.MarketPrices |> sortMarketPrices }
+    else
+        Error finalState.Errors
