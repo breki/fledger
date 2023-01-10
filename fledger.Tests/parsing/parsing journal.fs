@@ -14,8 +14,6 @@ open FsCheck
 open FParsec
 open Xunit.Abstractions
 
-// todo 3: add comments to the test
-
 let chooseFromRandomJournal () =
     gen {
         let! hasEmptyLinesBetweenTxs = Arb.from<bool>.Generator
@@ -29,6 +27,7 @@ commodity USD
 
 P 2018-11-01 USD 0.877 EUR
                 
+# this is a comment
 account assets:current assets:NLB
   note  (type: BANK)
 
@@ -70,7 +69,8 @@ account assets:current assets:NLB
                        { Value = 0.877m
                          Commodity = Some "EUR" } }
                ))
-              (8L,
+              (8L, Comment(" this is a comment"))
+              (9L,
                Account(
                    { Account = "assets:current assets:NLB" |> AccountRef.Create
                      Subdirectives = [ "note  (type: BANK)" ] }
@@ -113,7 +113,7 @@ account assets:current assets:NLB
 
         let expectedTransactions =
             List.init txCount (fun i ->
-                (11L
+                (12L
                  + (i |> int64)
                    * (5L + (if hasEmptyLinesBetweenTxs then 3L else 0L)),
                  Transaction expectedTransaction))
