@@ -200,8 +200,10 @@ type Ledger =
       Transactions: Transaction list
       MarketPrices: MarketPrices }
 
+type LedgerError = { Message: string; Line: int }
+
 // todo 5: fillLedger should support returning errors
-let fillLedger (journal: Journal) : Ledger =
+let fillLedger (journal: Journal) : Result<Ledger, LedgerError list> =
     let toLedgerAmount state (amount: JournalAmount) =
         match amount.Commodity with
         | Some commodity ->
@@ -283,6 +285,7 @@ let fillLedger (journal: Journal) : Ledger =
 
     let finalState = journal.Items |> List.fold processJournalItem initialState
 
-    { Transactions = finalState.Transactions |> List.rev
-      Accounts = finalState.Accounts
-      MarketPrices = finalState.MarketPrices |> sortMarketPrices }
+    Ok
+        { Transactions = finalState.Transactions |> List.rev
+          Accounts = finalState.Accounts
+          MarketPrices = finalState.MarketPrices |> sortMarketPrices }

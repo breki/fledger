@@ -37,14 +37,12 @@ let outputDirOption =
 
 
 let encodeDayBalance ((date, amount): CommodityBalanceOnDate) =
-    Encode.object [ "d",
-                    Encode.string (
-                        date.ToString(
-                            "yyyy-MM-dd",
-                            DateTimeFormatInfo.InvariantInfo
-                        )
-                    )
-                    "v", amount.Value |> Math.Round |> int |> Encode.int ]
+    Encode.object
+        [ "d",
+          Encode.string (
+              date.ToString("yyyy-MM-dd", DateTimeFormatInfo.InvariantInfo)
+          )
+          "v", amount.Value |> Math.Round |> int |> Encode.int ]
 
 let encodeCommodityBalanceHistory (history: CommodityBalanceHistory) =
     history |> List.map encodeDayBalance |> Encode.list
@@ -95,7 +93,9 @@ let incomeAnalysisJson ledger =
     let incomeRouter (posting: Posting) =
         if posting.Account.FullName.StartsWith("income:Freelancing") then
             Some 0
-        elif posting.Account.FullName.StartsWith("income:Business:ScalableMaps") then
+        elif
+            posting.Account.FullName.StartsWith("income:Business:ScalableMaps")
+        then
             Some 1
         elif posting.Account.FullName.StartsWith("income:Salary") then
             Some 2
@@ -173,38 +173,41 @@ type GenerateChartsCommandHandler
 
                 match result with
                 | Success (journal, _, _) ->
-                    let ledger = fillLedger journal
+                    match fillLedger journal with
+                    | Result.Error error ->
+                        printfn $"PARSING ERROR: {error}"
+                        return 1
+                    | Result.Ok ledger ->
+                        let strExeFilePath =
+                            System
+                                .Reflection
+                                .Assembly
+                                .GetExecutingAssembly()
+                                .Location
 
-                    let strExeFilePath =
-                        System
-                            .Reflection
-                            .Assembly
-                            .GetExecutingAssembly()
-                            .Location
+                        let strWorkPath = Path.GetDirectoryName(strExeFilePath)
 
-                    let strWorkPath = Path.GetDirectoryName(strExeFilePath)
+                        let templateDir = Path.Combine(strWorkPath, "charts")
 
-                    let templateDir = Path.Combine(strWorkPath, "charts")
+                        generateHtml
+                            templateDir
+                            "total-balance.html"
+                            (totalBalanceJson ledger)
+                            outputDir
 
-                    generateHtml
-                        templateDir
-                        "total-balance.html"
-                        (totalBalanceJson ledger)
-                        outputDir
+                        generateHtml
+                            templateDir
+                            "income-expenses.html"
+                            (incomeAndExpensesJson ledger)
+                            outputDir
 
-                    generateHtml
-                        templateDir
-                        "income-expenses.html"
-                        (incomeAndExpensesJson ledger)
-                        outputDir
+                        generateHtml
+                            templateDir
+                            "income-analysis.html"
+                            (incomeAnalysisJson ledger)
+                            outputDir
 
-                    generateHtml
-                        templateDir
-                        "income-analysis.html"
-                        (incomeAnalysisJson ledger)
-                        outputDir
-
-                    return 0
+                        return 0
                 | Failure (errorMsg, _, _) ->
                     printfn $"PARSING ERROR: {errorMsg}"
                     return 1
