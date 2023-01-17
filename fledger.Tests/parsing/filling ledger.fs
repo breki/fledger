@@ -1,30 +1,16 @@
 ﻿module fledger.Tests.parsing.filling_ledger
 
-open System
 open fledger.Journal
 open Xunit
 open fledger.Ledger
-
-
-
-// type JournalItem =
-//     | Account of AccountDirective
-//     | Comment of string
-//     | Commodity of Commodity
-//     | DefaultCommodity of JournalAmount
-//     | MarketPrice of MarketPriceDirective
-//     | Transaction of TransactionDirective
-//
-// type Journal = { Items: (int64 * JournalItem) list }
+open fledger.Tests.JournalBuilders
 
 
 [<Fact>]
 let ``automatically adds a missing commodity in DefaultCommodity directive``
     ()
     =
-    let journal =
-        { Items =
-            [ 14L, DefaultCommodity { Value = 1m; Commodity = Some "EUR" } ] }
+    let journal = { Items = [ 14L, defaultCommodityDirective () ] }
 
     match fillLedger journal with
     | Result.Error errors ->
@@ -34,13 +20,7 @@ let ``automatically adds a missing commodity in DefaultCommodity directive``
 
 [<Fact>]
 let ``reports missing commodities in MarketPrice directive`` () =
-    let journal =
-        { Items =
-            [ 14L,
-              MarketPrice
-                  { Date = DateTime.Now
-                    Price = { Value = 1m; Commodity = Some "USD" }
-                    Commodity = "EUR" } ] }
+    let journal = { Items = [ 14L, marketPriceDirective () ] }
 
     match fillLedger journal with
     | Result.Error errors ->
@@ -51,3 +31,13 @@ let ``reports missing commodities in MarketPrice directive`` () =
                          Line = 14L } ]
         @>
     | Result.Ok _ -> failwith "should not be ok"
+
+[<Fact>]
+let ``reports validation errors for Transaction directive`` () =
+    let journal =
+        { Items =
+            [ 14L,
+              withTransaction () |> (withPostingLine "acc1" id) |> Transaction ] }
+
+    // todo 5: continue with the test once we have the journal builder
+    <@ true @>

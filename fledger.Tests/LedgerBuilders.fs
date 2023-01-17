@@ -1,4 +1,4 @@
-﻿module fledger.Tests.DataBuilders
+﻿module fledger.Tests.LedgerBuilders
 
 open System
 open fledger.Ledger

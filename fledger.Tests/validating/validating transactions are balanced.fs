@@ -1,11 +1,10 @@
 ﻿module fledger.Tests.validating.validating_transactions_are_balanced
 
-open System
 open Xunit
 open fledger.BalanceTypes
 open fledger.Ledger
 open fledger.ValidationFuncs
-open fledger.Tests.DataBuilders
+open fledger.Tests.LedgerBuilders
 open Swensen.Unquote
 
 // todo 13: validator: total amount of a transaction should be 0

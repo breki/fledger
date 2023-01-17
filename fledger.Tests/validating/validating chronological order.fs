@@ -4,7 +4,7 @@ open System
 open Xunit
 open fledger.Ledger
 open fledger.ValidationFuncs
-open fledger.Tests.DataBuilders
+open fledger.Tests.LedgerBuilders
 open Swensen.Unquote
 
 [<Fact>]
@@ -27,6 +27,8 @@ let ``transactions should be in chronological order`` () =
     test <@ Result.isError result @>
 
     test
-        <@ result = Result.Error(
-            { Message = "Transaction out of order: 2023/01/06 not in order" }
-        ) @>
+        <@
+            result = Result.Error(
+                { Message = "Transaction out of order: 2023/01/06 not in order" }
+            )
+        @>

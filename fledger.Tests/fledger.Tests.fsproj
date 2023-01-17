@@ -15,7 +15,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <Compile Include="DataBuilders.fs" />
+        <Compile Include="JournalBuilders.fs" />
+        <Compile Include="LedgerBuilders.fs" />
         <Compile Include="parsing\ParsingUtils.fs" />
         <Compile Include="parsing\parsing account directive.fs" />
         <Compile Include="parsing\parsing amounts.fs" />
