@@ -242,9 +242,11 @@ let fillLedger (journal: Journal) : Result<Ledger, LedgerError list> =
                 if state.Commodities.Contains commodity then
                     { state with DefaultCommodity = defaultCommodity.Commodity }
                 else
-                    state.withErrors
-                        [ { Message = $"Commodity '%s{commodity}' not defined."
-                            Line = lineNumber } ]
+                    // automatically add the default commodity to the
+                    // commodities list
+                    { state with
+                        Commodities = state.Commodities.Add commodity
+                        DefaultCommodity = defaultCommodity.Commodity }
             | None -> invalidOp "No default commodity"
         | MarketPrice marketPrice ->
             let errors1 =

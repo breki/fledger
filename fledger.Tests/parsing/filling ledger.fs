@@ -4,7 +4,6 @@ open System
 open fledger.Journal
 open Xunit
 open fledger.Ledger
-open Swensen.Unquote
 
 
 
@@ -20,22 +19,17 @@ open Swensen.Unquote
 
 
 [<Fact>]
-let ``reports a missing commodity in DefaultCommodity directive`` () =
+let ``automatically adds a missing commodity in DefaultCommodity directive``
+    ()
+    =
     let journal =
         { Items =
             [ 14L, DefaultCommodity { Value = 1m; Commodity = Some "EUR" } ] }
 
     match fillLedger journal with
     | Result.Error errors ->
-        match errors with
-        | [ error ] ->
-            test
-                <@
-                    error = { Message = "Commodity 'EUR' not defined."
-                              Line = 14L }
-                @>
-        | _ -> failwith "Expected one error"
-    | Result.Ok _ -> failwith "should not be ok"
+        failwith (String.concat "," (errors |> List.map (fun x -> x.Message)))
+    | Result.Ok _ -> <@ true @>
 
 
 [<Fact>]

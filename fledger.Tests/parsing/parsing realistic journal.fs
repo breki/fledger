@@ -18,7 +18,6 @@ open fledger.ValidationFuncs
 
 open Swensen.Unquote
 
-// todo 1: solve the problem with missing default commodity
 type RealisticJournalParsingTests(output: ITestOutputHelper) =
     [<Fact>]
     // [<Fact(Skip = "Only to be run to debug problems "
