@@ -14,28 +14,10 @@ let marketPriceDirective () =
       Commodity = "EUR" }
     |> MarketPrice
 
-// type TransactionInfo =
-//     { Date: Date
-//       Status: TransactionStatus
-//       Description: string option
-//       Payee: string option
-//       Note: string option
-//       Comment: string option }
-//
-// [<Struct>]
-// type JournalAmount =
-//     { Value: Decimal
-//       Commodity: string option }
-//
-// type PostingLine =
-//     { Account: AccountRef
-//       Amount: JournalAmount
-//       TotalPrice: JournalAmount option
-//       ExpectedBalance: JournalAmount option }
-//
-// type TransactionDirective =
-//     { Info: TransactionInfo
-//       Postings: PostingLine list }
+let withAccountDirective account =
+    { Account = AccountRef.Create account
+      Subdirectives = [] }
+    |> Account
 
 let withTransaction () =
     { Info =
@@ -57,5 +39,16 @@ let withPostingLine account postingLineBuilder tx =
                   ExpectedBalance = None }
                 |> postingLineBuilder ] }
 
-// todo 3: continue with journal builders - implement builders
-//  for posting lines
+let withTotalPrice amount commodity postingLine =
+    { postingLine with
+        TotalPrice =
+            Some
+                { Value = amount
+                  Commodity = Some commodity } }
+
+let withExpectedBalance amount commodity postingLine =
+    { postingLine with
+        ExpectedBalance =
+            Some
+                { Value = amount
+                  Commodity = Some commodity } }

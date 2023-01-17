@@ -4,6 +4,7 @@ open fledger.Journal
 open Xunit
 open fledger.Ledger
 open fledger.Tests.JournalBuilders
+open Swensen.Unquote
 
 
 [<Fact>]
@@ -15,7 +16,7 @@ let ``automatically adds a missing commodity in DefaultCommodity directive``
     match fillLedger journal with
     | Result.Error errors ->
         failwith (String.concat "," (errors |> List.map (fun x -> x.Message)))
-    | Result.Ok _ -> <@ true @>
+    | Result.Ok _ -> test <@ true @>
 
 
 [<Fact>]
@@ -24,20 +25,40 @@ let ``reports missing commodities in MarketPrice directive`` () =
 
     match fillLedger journal with
     | Result.Error errors ->
-        <@
-            errors = [ { Message = "Commodity 'EUR' not defined."
-                         Line = 14L }
-                       { Message = "Commodity 'USD' not defined."
-                         Line = 14L } ]
-        @>
+        test
+            <@
+                errors = [ { Message = "Commodity 'EUR' not defined."
+                             Line = 14L }
+                           { Message = "Commodity 'USD' not defined."
+                             Line = 14L } ]
+            @>
     | Result.Ok _ -> failwith "should not be ok"
 
 [<Fact>]
-let ``reports validation errors for Transaction directive`` () =
+let ``reports missing account and commodity errors for Transaction directive``
+    ()
+    =
     let journal =
         { Items =
             [ 14L,
-              withTransaction () |> (withPostingLine "acc1" id) |> Transaction ] }
+              withTransaction ()
+              |> (withPostingLine "acc1" (fun p ->
+                  p |> withTotalPrice 10m "USD" |> withExpectedBalance 20m "GBP"))
+              |> Transaction ] }
 
-    // todo 5: continue with the test once we have the journal builder
-    <@ true @>
+    match fillLedger journal with
+    | Result.Error errors ->
+        test
+            <@
+                errors = [ { Message = "Account 'acc1' not defined."
+                             Line = 14L }
+                           { Message = "Commodity 'EUR' not defined."
+                             Line = 14L }
+                           { Message = "Commodity 'USD' not defined."
+                             Line = 14L }
+                           { Message = "Commodity 'GBP' not defined."
+                             Line = 14L } ]
+            @>
+    | Result.Ok _ -> failwith "should not be ok"
+
+// todo 9: verify unbalanced transactions are reported

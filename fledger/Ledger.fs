@@ -208,17 +208,53 @@ type Ledger =
       MarketPrices: MarketPrices }
 
 let fillLedger (journal: Journal) : Result<Ledger, LedgerError list> =
-    let toLedgerAmount state (amount: JournalAmount) =
+
+    let verifyAccountExists
+        (state: LedgerFillingState)
+        account
+        lineNumber
+        errorsSoFar
+        =
+        if state.Accounts.ContainsKey account then
+            account, errorsSoFar
+        else
+            account,
+            { Message = $"Account '%s{account.FullName}' not defined."
+              Line = lineNumber }
+            :: errorsSoFar
+
+    let toLedgerAmount
+        state
+        (amount: JournalAmount)
+        lineNumber
+        errorsSoFar
+        : Amount * LedgerError list =
         match amount.Commodity with
         | Some commodity ->
-            { Value = amount.Value
-              Commodity = commodity }
+            if state.Commodities.Contains commodity then
+                { Value = amount.Value
+                  Commodity = commodity },
+                errorsSoFar
+            else
+                { Value = amount.Value
+                  Commodity = commodity },
+                { Message = $"Commodity '%s{commodity}' not defined."
+                  Line = lineNumber }
+                :: errorsSoFar
         | None ->
             match state.DefaultCommodity with
             | Some commodity ->
                 { Value = amount.Value
-                  Commodity = commodity }
-            | None -> invalidOp "No default commodity"
+                  Commodity = commodity },
+                errorsSoFar
+            | None ->
+                { Value = amount.Value
+                  Commodity = "not defined" },
+                { Message =
+                    "An amount does not specify the commodity even though "
+                    + "the default commodity was not defined."
+                  Line = lineNumber }
+                :: errorsSoFar
 
 
     let processJournalItem
@@ -226,6 +262,7 @@ let fillLedger (journal: Journal) : Result<Ledger, LedgerError list> =
         (lineNumber, journalItem)
         =
         match journalItem with
+        // todo 10: validate there are no duplicate accounts
         | Account account ->
             { state with
                 Accounts =
@@ -249,7 +286,7 @@ let fillLedger (journal: Journal) : Result<Ledger, LedgerError list> =
                         DefaultCommodity = defaultCommodity.Commodity }
             | None -> invalidOp "No default commodity"
         | MarketPrice marketPrice ->
-            let errors1 =
+            let errors =
                 if state.Commodities.Contains marketPrice.Commodity then
                     []
                 else
@@ -257,36 +294,74 @@ let fillLedger (journal: Journal) : Result<Ledger, LedgerError list> =
                           $"Commodity '%s{marketPrice.Commodity}' not defined."
                         Line = lineNumber } ]
 
-            let errors2 =
-                match marketPrice.Price.Commodity with
-                | Some commodity ->
-                    if state.Commodities.Contains commodity then
-                        []
-                    else
-                        [ { Message = $"Commodity '%s{commodity}' not defined."
-                            Line = lineNumber } ]
-                | None -> []
+            let price, errors =
+                toLedgerAmount state marketPrice.Price lineNumber errors
 
-            let errors = errors1 @ errors2
-
-            if errors.Length = 0 then
-                let price = toLedgerAmount state marketPrice.Price
-
-                { state with
-                    MarketPrices =
-                        state.MarketPrices
-                        |> addMarketPrice
-                            { Date = marketPrice.Date
-                              Commodity = marketPrice.Commodity
-                              Price = price } }
-            else
-                state.withErrors errors
+            { state with
+                MarketPrices =
+                    state.MarketPrices
+                    |> addMarketPrice
+                        { Date = marketPrice.Date
+                          Commodity = marketPrice.Commodity
+                          Price = price } }
+                .withErrors errors
 
         | Transaction transaction ->
-            // todo 7: check the commodity exists
-            // todo 8: check the account exists
-            // todo 9: check the transactions are in chronological order
-            // todo 10: check the transaction is balanced
+            // todo 9: check the transaction is balanced
+            // todo 10: check the transactions are in chronological order
+
+            let processPosting
+                (posting: PostingLine)
+                lineNumber
+                : Posting * LedgerError list =
+                let errors = []
+
+                let accountRef, errors =
+                    verifyAccountExists state posting.Account lineNumber errors
+
+                let amount, errors =
+                    toLedgerAmount state posting.Amount lineNumber errors
+
+                let totalPrice, errors =
+                    match posting.TotalPrice with
+                    | Some totalPrice ->
+                        let totalPriceAmount, errors =
+                            toLedgerAmount state totalPrice lineNumber errors
+
+                        Some totalPriceAmount, errors
+                    | None -> None, errors
+
+                let expectedBalance, errors =
+                    match posting.ExpectedBalance with
+                    | Some expectedBalance ->
+                        let expectedBalanceAmount, errors =
+                            toLedgerAmount
+                                state
+                                expectedBalance
+                                lineNumber
+                                errors
+
+                        Some expectedBalanceAmount, errors
+                    | None -> None, errors
+
+                { Account = accountRef
+                  Amount = amount
+                  TotalPrice = totalPrice
+                  ExpectedBalance = expectedBalance },
+                errors
+
+            // collect postings and any errors detected while processing them
+            let postings, errors =
+                transaction.Postings
+                |> List.fold
+                    (fun (postings, errors) posting ->
+                        let posting, postingErrors =
+                            processPosting posting lineNumber
+
+                        posting :: postings, errors @ postingErrors)
+                    ([], [])
+
+            // return the collected transaction and any errors detected while processing them
             { state with
                 Transactions =
                     { Date = transaction.Info.Date
@@ -295,22 +370,9 @@ let fillLedger (journal: Journal) : Result<Ledger, LedgerError list> =
                       Payee = transaction.Info.Payee
                       Note = transaction.Info.Note
                       Comment = transaction.Info.Comment
-                      Postings =
-                        transaction.Postings
-                        |> List.map (fun posting ->
-                            { Account = posting.Account
-                              Amount = toLedgerAmount state posting.Amount
-                              TotalPrice =
-                                match posting.TotalPrice with
-                                | Some totalPrice ->
-                                    Some(toLedgerAmount state totalPrice)
-                                | None -> None
-                              ExpectedBalance =
-                                match posting.ExpectedBalance with
-                                | Some expectedBalance ->
-                                    Some(toLedgerAmount state expectedBalance)
-                                | None -> None }) }
+                      Postings = postings }
                     :: state.Transactions }
+                .withErrors errors
 
 
     let initialState: LedgerFillingState =
@@ -329,4 +391,4 @@ let fillLedger (journal: Journal) : Result<Ledger, LedgerError list> =
               Accounts = finalState.Accounts
               MarketPrices = finalState.MarketPrices |> sortMarketPrices }
     else
-        Error finalState.Errors
+        Error finalState.Errors |> Result.mapError List.rev
