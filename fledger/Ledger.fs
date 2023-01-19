@@ -185,7 +185,6 @@ let sortMarketPrices (prices: MarketPrices) : MarketPrices =
 /// An error encountered while filling the ledger from a journal.
 type LedgerError = { Message: string; Line: int64 }
 
-// todo 7: all dated directives should be checked for chronological order
 type LedgerFillingState =
     { Commodities: Set<Commodity>
       DefaultCommodity: string option
