@@ -73,18 +73,6 @@ let fillLedger (journal: Journal) : Result<Ledger, LedgerError list> =
                   Line = lineNumber }
                 :: errorsSoFar
 
-    // todo 5: take into account posting TotalPrice when calculating balances
-    let unbalancedTxCommodities tx =
-        // calculate multi-commodity balances from the tx postings
-        let balances =
-            tx.Postings
-            |> List.map (fun p -> p.Amount)
-            |> MultiCommodityBalance.FromAmounts
-
-        // return only the unbalanced commodities
-        balances.Filter(fun _ amount -> amount.Value <> 0m)
-
-
     let processJournalItem
         (state: LedgerFillingState)
         (lineNumber, journalItem)

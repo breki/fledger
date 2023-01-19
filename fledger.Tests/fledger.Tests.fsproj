@@ -28,6 +28,7 @@
         <Compile Include="accounting functions\full dates balance history.fs" />
         <Compile Include="accounting functions\balance history moving averages.fs" />
         <Compile Include="accounting functions\multi-commodity balance.fs" />
+        <Compile Include="accounting functions\unbalanced transaction.fs" />
         <Compile Include="Todo.fs" />
     </ItemGroup>
 

@@ -103,3 +103,19 @@ type BalanceHistory = List<BalanceOnDate>
 type CommodityBalanceOnDate = Date * Amount
 /// A list of single-commodity balances, one for each date.
 type CommodityBalanceHistory = List<CommodityBalanceOnDate>
+
+
+let unbalancedTxCommodities (tx: Transaction) =
+    // calculate multi-commodity balances from the tx postings
+    let balances =
+        tx.Postings
+        |> List.map (fun p ->
+            match p.TotalPrice with
+            // if the posting has total price, use its negative value
+            // to balance the transaction
+            | Some totalPrice -> -totalPrice
+            | None -> p.Amount)
+        |> MultiCommodityBalance.FromAmounts
+
+    // return only the unbalanced commodities
+    balances.Filter(fun _ amount -> amount.Value <> 0m)

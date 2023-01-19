@@ -21,13 +21,27 @@ let addPosting posting tx =
     { tx with Postings = tx.Postings @ [ posting ] }
 
 let toAccount account =
-    { Account = account
+    { Account = AccountRef.Create account
       Amount = Amount.Zero("EUR")
       TotalPrice = None
       ExpectedBalance = None }
 
 let amountOf amount posting =
     { posting with Amount = { Value = amount; Commodity = "EUR" } }
+
+let amountCommodityOf amount commodity posting =
+    { posting with
+        Amount =
+            { Value = amount
+              Commodity = commodity } }
+
+let withTotalPrice amount commodity posting =
+    { posting with
+        TotalPrice =
+            Some
+                { Value = amount
+                  Commodity = commodity } }
+
 
 let withLedger (accounts: Account list) (transactions: Transaction list) =
     // convert account list to a map, with account names as keys
