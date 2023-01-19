@@ -8,11 +8,23 @@ open fledger.Journal
 let defaultCommodityDirective () =
     DefaultCommodity { Value = 1m; Commodity = Some "EUR" }
 
+let commodity commodityId = Commodity commodityId
+
 let marketPriceDirective () =
     { Date = DateTime(2023, 01, 17)
       Price = { Value = 1m; Commodity = Some "USD" }
       Commodity = "EUR" }
     |> MarketPrice
+
+/// Modifies the specified journal item by setting the specified date.
+let onDate date journalItem =
+    match journalItem with
+    | Transaction tx ->
+        Transaction { tx with Info = { tx.Info with Date = date } }
+    | MarketPrice mp -> MarketPrice { mp with Date = date }
+    | _ ->
+        invalidOp "onDate: journal item must be a transaction or a market price"
+
 
 let withAccountDirective account =
     { Account = AccountRef.Create account
@@ -29,7 +41,7 @@ let withTransaction () =
           Comment = None }
       Postings = [] }
 
-let onDate date tx =
+let txOnDate date tx =
     { tx with Info = { tx.Info with Date = date } }
 
 let withPostingLine account postingLineBuilder tx =

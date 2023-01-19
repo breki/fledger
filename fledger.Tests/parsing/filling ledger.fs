@@ -35,7 +35,24 @@ let ``reports missing commodities in MarketPrice directive`` () =
             @>
     | Result.Ok _ -> failwith "should not be ok"
 
-// todo 6: test that the market price is in chronological order
+[<Fact>]
+let ``reports market price not in chronological order`` () =
+    let journal =
+        { Items =
+            [ 12L, commodity "EUR"
+              13L, commodity "USD"
+              14L, marketPriceDirective () |> onDate (DateTime(2023, 01, 19))
+              15L, marketPriceDirective () |> onDate (DateTime(2023, 01, 18)) ] }
+
+    match fillLedger journal with
+    | Result.Error errors ->
+        test
+            <@
+                errors = [ { Message =
+                               "Market price on date 2023/01/18 is not in chronological order."
+                             Line = 15L } ]
+            @>
+    | Result.Ok _ -> failwith "should not be ok"
 
 [<Fact>]
 let ``reports missing account and commodity errors for Transaction directive``
@@ -69,9 +86,13 @@ let ``reports transaction is not in chronological order`` () =
     let journal =
         { Items =
             [ 14L,
-              withTransaction () |> onDate (DateTime(2018, 1, 2)) |> Transaction
+              withTransaction ()
+              |> txOnDate (DateTime(2018, 1, 2))
+              |> Transaction
               15L,
-              withTransaction () |> onDate (DateTime(2018, 1, 1)) |> Transaction ] }
+              withTransaction ()
+              |> txOnDate (DateTime(2018, 1, 1))
+              |> Transaction ] }
 
     match fillLedger journal with
     | Result.Error errors ->

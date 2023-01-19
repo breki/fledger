@@ -210,13 +210,13 @@ let fillLedger (journal: Journal) : Result<Ledger, LedgerError list> =
     let verifyItemIsInChronologicalOrder
         state
         itemType
-        itemDate
+        (itemDate: Date)
         lineNumber
         errorsSoFar
         =
         match state.CurrentDate with
         | Some currentDate ->
-            if itemDate < currentDate then
+            if itemDate.Date < currentDate.Date then
                 { Message =
                     $"%s{itemType} on date %s{itemDate |> dateToStr} is not in chronological order."
                   Line = lineNumber }
@@ -313,6 +313,14 @@ let fillLedger (journal: Journal) : Result<Ledger, LedgerError list> =
 
             let price, errors =
                 toLedgerAmount state marketPrice.Price lineNumber errors
+
+            let errors =
+                verifyItemIsInChronologicalOrder
+                    state
+                    "Market price"
+                    marketPrice.Date
+                    lineNumber
+                    errors
 
             ({ state with
                 MarketPrices =
