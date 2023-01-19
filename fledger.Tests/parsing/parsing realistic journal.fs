@@ -11,7 +11,8 @@ open Xunit.Abstractions
 
 open fledger.Parsing.ParsingBasics
 open fledger.Parsing.ParsingJournal
-open fledger.Ledger
+open fledger.LedgerTypes
+open fledger.LedgerFilling
 open fledger.BalanceTypes
 open fledger.AccountingFuncs
 open fledger.ValidationFuncs

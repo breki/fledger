@@ -2,7 +2,7 @@
 
 open fledger.BalanceTypes
 open fledger.BasicTypes
-open fledger.Ledger
+open fledger.LedgerTypes
 
 /// Returns the balances of all the accounts.
 let accountsBalances (ledger: Ledger) =
@@ -35,18 +35,14 @@ let accountsBalances (ledger: Ledger) =
                         newCommodityBalance }
 
         { balances with
-            Balances =
-                balances.Balances
-                |> Map.add account newAccountBalance }
+            Balances = balances.Balances |> Map.add account newAccountBalance }
 
     let processTx balances (transaction: Transaction) =
-        transaction.Postings
-        |> List.fold processPosting balances
+        transaction.Postings |> List.fold processPosting balances
 
     let initialState = { Balances = Map.empty }
 
-    ledger.Transactions
-    |> List.fold processTx initialState
+    ledger.Transactions |> List.fold processTx initialState
 
 /// Adds an amount to the balance-by-date structure.
 let addAmountToBalance
@@ -67,8 +63,7 @@ let addAmountToBalance
         |> Option.defaultValue (commodity |> Amount.Zero)
         |> (+) amount
 
-    balances
-    |> Map.add date (balance.AddCommodity commodity newBalance)
+    balances |> Map.add date (balance.AddCommodity commodity newBalance)
 
 
 type PostingFilter = BalanceByDate -> Transaction -> Posting -> BalanceByDate
@@ -88,14 +83,10 @@ let calculateBalanceChangeHistory
     let initialState = Map.empty
 
     let balancesByDates =
-        ledger.Transactions
-        |> List.fold processTx initialState
+        ledger.Transactions |> List.fold processTx initialState
 
     // sort balances by date
-    balancesByDates
-    |> Map.toSeq
-    |> Seq.sortBy fst
-    |> Seq.toList
+    balancesByDates |> Map.toSeq |> Seq.sortBy fst |> Seq.toList
 
 
 /// Returns the total multi-currency balance change for each day.
@@ -119,8 +110,7 @@ let absoluteTotalBalanceHistory
         : BalanceOnDate =
         (date, currentTotalBalance + totalBalanceChangeForDate)
 
-    let emptyBalance =
-        (Date.MinValue, MultiCommodityBalance.Empty)
+    let emptyBalance = (Date.MinValue, MultiCommodityBalance.Empty)
 
     totalBalanceHistory
     |> List.scan folder emptyBalance
@@ -162,19 +152,16 @@ let fullDatesBalanceHistory (balanceHistory: BalanceHistory) : BalanceHistory =
             balanceHistory
             |> List.pairwise
             |> List.map (fun ((dateBefore, balanceBefore), (dateAfter, _)) ->
-                let daysBetween =
-                    (dateAfter.Date - dateBefore.Date).Days
+                let daysBetween = (dateAfter.Date - dateBefore.Date).Days
 
-                let dates =
-                    Seq.init daysBetween dateBefore.AddDays
+                let dates = Seq.init daysBetween dateBefore.AddDays
 
                 (dates
                  |> Seq.map (fun date -> (date, balanceBefore))
                  |> Seq.toList))
             |> List.concat
 
-        balancesExceptLast
-        @ [ balanceHistory |> List.last ]
+        balancesExceptLast @ [ balanceHistory |> List.last ]
 
 
 /// Calculates the moving averages of the balance history.
@@ -208,8 +195,7 @@ let commodityBalanceHistoryMovingAverage
     : CommodityBalanceHistory =
 
     if movingAverageDays > 0 then
-        let commodity =
-            (balanceHistory[0] |> snd).Commodity
+        let commodity = (balanceHistory[0] |> snd).Commodity
 
         let daysBefore = movingAverageDays / 2
 
@@ -262,8 +248,7 @@ let balancesChangeHistories
         postingRouter posting
         |> function
             | Some slotIndex ->
-                let balanceHistory =
-                    balancesHistories[slotIndex]
+                let balanceHistory = balancesHistories[slotIndex]
 
                 let newBalance =
                     addAmountToBalance date posting.Amount balanceHistory

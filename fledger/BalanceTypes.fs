@@ -1,7 +1,7 @@
 ﻿module fledger.BalanceTypes
 
 open fledger.BasicTypes
-open fledger.Ledger
+open fledger.LedgerTypes
 
 /// Represents a dictionary of balances for one or more commodities.
 type MultiCommodityBalance =

@@ -3,7 +3,7 @@
 open Xunit
 open Swensen.Unquote
 open fledger.BalanceTypes
-open fledger.Ledger
+open fledger.LedgerTypes
 
 [<Fact>]
 let ``can be constructed from a sequence of amounts with repeating commodities``

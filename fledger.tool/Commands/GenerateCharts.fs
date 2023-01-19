@@ -15,7 +15,8 @@ open fledger.BasicTypes
 open fledger.Parsing.ParsingBasics
 open fledger.Parsing.ParsingJournal
 open fledger.AccountingFuncs
-open fledger.Ledger
+open fledger.LedgerTypes
+open fledger.LedgerFilling
 
 let eur = "EUR"
 

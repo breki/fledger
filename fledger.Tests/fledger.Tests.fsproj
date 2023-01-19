@@ -25,7 +25,6 @@
         <Compile Include="parsing\parsing tx first line.fs" />
         <Compile Include="parsing\parsing tx posting.fs" />
         <Compile Include="parsing\filling ledger.fs" />
-        <Compile Include="validating\validating transactions are balanced.fs" />
         <Compile Include="accounting functions\full dates balance history.fs" />
         <Compile Include="accounting functions\balance history moving averages.fs" />
         <Compile Include="accounting functions\multi-commodity balance.fs" />

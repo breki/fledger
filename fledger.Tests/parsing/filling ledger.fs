@@ -3,7 +3,8 @@
 open System
 open fledger.Journal
 open Xunit
-open fledger.Ledger
+open fledger.LedgerTypes
+open fledger.LedgerFilling
 open fledger.Tests.JournalBuilders
 open Swensen.Unquote
 
@@ -12,7 +13,7 @@ open Swensen.Unquote
 let ``automatically adds a missing commodity in DefaultCommodity directive``
     ()
     =
-    let journal = { Items = [ 14L, defaultCommodityDirective () ] }
+    let journal = { Items = [ 14L, defaultCommodityDirective "EUR" ] }
 
     match fillLedger journal with
     | Result.Error errors ->
@@ -105,3 +106,30 @@ let ``reports transaction is not in chronological order`` () =
     | Result.Ok _ -> failwith "should not be ok"
 
 // todo 9: verify unbalanced transactions are reported
+
+[<Fact>]
+let ``reports unbalanced transaction commodities`` () =
+    let journal =
+        { Items =
+            [ 11L, defaultCommodityDirective "USD"
+              12L, commodity "EUR"
+              13L, withAccountDirective "acc1"
+              14L,
+              withTransaction ()
+              |> withPostingLine "acc1" (fun p ->
+                  p |> withAmount 10m (Some "EUR"))
+              |> withPostingLine "acc1" (fun p -> p |> withAmount -5m None)
+              |> Transaction ] }
+
+    match fillLedger journal with
+    | Result.Error errors ->
+        test
+            <@
+                errors = [ { Message =
+                               "Transaction is unbalanced for commodity: 10.00 EUR."
+                             Line = 14L }
+                           { Message =
+                               "Transaction is unbalanced for commodity: -5.00 USD."
+                             Line = 14L } ]
+            @>
+    | Result.Ok _ -> failwith "should not be ok"

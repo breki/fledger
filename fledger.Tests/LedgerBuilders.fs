@@ -1,7 +1,7 @@
 ﻿module fledger.Tests.LedgerBuilders
 
 open System
-open fledger.Ledger
+open fledger.LedgerTypes
 open fledger.BasicTypes
 
 

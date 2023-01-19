@@ -5,8 +5,10 @@ open fledger.BasicTypes
 open fledger.Journal
 
 
-let defaultCommodityDirective () =
-    DefaultCommodity { Value = 1m; Commodity = Some "EUR" }
+let defaultCommodityDirective commodity =
+    DefaultCommodity
+        { Value = 1m
+          Commodity = Some commodity }
 
 let commodity commodityId = Commodity commodityId
 
@@ -49,10 +51,16 @@ let withPostingLine account postingLineBuilder tx =
         Postings =
             tx.Postings
             @ [ { Account = AccountRef.Create account
-                  Amount = { Value = 1m; Commodity = Some "EUR" }
+                  Amount = { Value = 0m; Commodity = Some "EUR" }
                   TotalPrice = None
                   ExpectedBalance = None }
                 |> postingLineBuilder ] }
+
+let withAmount amount commodity postingLine =
+    { postingLine with
+        Amount =
+            { Value = amount
+              Commodity = commodity } }
 
 let withTotalPrice amount commodity postingLine =
     { postingLine with

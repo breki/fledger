@@ -1,6 +1,6 @@
 ﻿module fledger.ValidationFuncs
 
-open fledger.Ledger
+open fledger.LedgerTypes
 
 type ValidationError = { Message: string }
 
