@@ -29,6 +29,9 @@ let withTransaction () =
           Comment = None }
       Postings = [] }
 
+let onDate date tx =
+    { tx with Info = { tx.Info with Date = date } }
+
 let withPostingLine account postingLineBuilder tx =
     { tx with
         Postings =

@@ -1,7 +1,6 @@
 ﻿module fledger.Ledger
 
 open System
-open System.Globalization
 open fledger.BasicTypes
 open fledger.Journal
 open Text
@@ -75,8 +74,7 @@ type Transaction =
       Comment: string option
       Postings: Posting list }
 
-    member this.DateStr =
-        this.Date.ToString("yyyy/MM/dd", DateTimeFormatInfo.InvariantInfo)
+    member this.DateStr = this.Date |> dateToStr
 
     member this.FullDescription =
         buildString ()
@@ -140,11 +138,7 @@ type MarketPrices =
             match priceAtDate with
             | Some (_, price) -> amount.Convert price
             | None ->
-                let dateStr =
-                    date.ToString(
-                        "yyyy/MM/dd",
-                        DateTimeFormatInfo.InvariantInfo
-                    )
+                let dateStr = date |> dateToStr
 
                 failwith
                     $"No market price to convert commodity \
@@ -191,13 +185,17 @@ let sortMarketPrices (prices: MarketPrices) : MarketPrices =
 /// An error encountered while filling the ledger from a journal.
 type LedgerError = { Message: string; Line: int64 }
 
+// todo 7: all dated directives should be checked for chronological order
 type LedgerFillingState =
     { Commodities: Set<Commodity>
       DefaultCommodity: string option
       MarketPrices: MarketPrices
       Accounts: Map<AccountRef, Account>
       Transactions: Transaction list
+      CurrentDate: Date option
       Errors: LedgerError list }
+
+    member this.withDate date = { this with CurrentDate = Some date }
 
     member this.withErrors(errors) =
         { this with Errors = this.Errors |> List.append errors }
@@ -208,6 +206,25 @@ type Ledger =
       MarketPrices: MarketPrices }
 
 let fillLedger (journal: Journal) : Result<Ledger, LedgerError list> =
+
+    let verifyItemIsInChronologicalOrder
+        state
+        itemType
+        itemDate
+        lineNumber
+        errorsSoFar
+        =
+        match state.CurrentDate with
+        | Some currentDate ->
+            if itemDate < currentDate then
+                { Message =
+                    $"%s{itemType} on date %s{itemDate |> dateToStr} is not in chronological order."
+                  Line = lineNumber }
+                :: errorsSoFar
+            else
+                errorsSoFar
+        | None -> errorsSoFar
+
 
     let verifyAccountExists
         (state: LedgerFillingState)
@@ -297,19 +314,18 @@ let fillLedger (journal: Journal) : Result<Ledger, LedgerError list> =
             let price, errors =
                 toLedgerAmount state marketPrice.Price lineNumber errors
 
-            { state with
+            ({ state with
                 MarketPrices =
                     state.MarketPrices
                     |> addMarketPrice
                         { Date = marketPrice.Date
                           Commodity = marketPrice.Commodity
                           Price = price } }
+                .withDate marketPrice.Date)
                 .withErrors errors
 
         | Transaction transaction ->
             // todo 9: check the transaction is balanced
-            // todo 10: check the transactions are in chronological order
-
             let processPosting
                 (posting: PostingLine)
                 lineNumber
@@ -362,9 +378,19 @@ let fillLedger (journal: Journal) : Result<Ledger, LedgerError list> =
                     ([], [])
 
             // return the collected transaction and any errors detected while processing them
-            { state with
+            let txDate = transaction.Info.Date
+
+            let errors =
+                verifyItemIsInChronologicalOrder
+                    state
+                    "Transaction"
+                    txDate
+                    lineNumber
+                    errors
+
+            ({ state with
                 Transactions =
-                    { Date = transaction.Info.Date
+                    { Date = txDate
                       Status = transaction.Info.Status
                       Description = transaction.Info.Description
                       Payee = transaction.Info.Payee
@@ -372,6 +398,7 @@ let fillLedger (journal: Journal) : Result<Ledger, LedgerError list> =
                       Comment = transaction.Info.Comment
                       Postings = postings }
                     :: state.Transactions }
+                .withDate txDate)
                 .withErrors errors
 
 
@@ -381,6 +408,7 @@ let fillLedger (journal: Journal) : Result<Ledger, LedgerError list> =
           MarketPrices = { Prices = Map.empty }
           Accounts = Map.empty
           Transactions = []
+          CurrentDate = None
           Errors = [] }
 
     let finalState = journal.Items |> List.fold processJournalItem initialState

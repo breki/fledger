@@ -1,8 +1,12 @@
 ﻿module fledger.BasicTypes
 
 open System
+open System.Globalization
 
 type Date = DateTime
+
+let dateToStr (date: Date) =
+    date.ToString("yyyy/MM/dd", DateTimeFormatInfo.InvariantInfo)
 
 type Commodity = string
 type AccountName = string

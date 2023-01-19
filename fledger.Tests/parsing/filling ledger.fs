@@ -1,5 +1,6 @@
 ﻿module fledger.Tests.parsing.filling_ledger
 
+open System
 open fledger.Journal
 open Xunit
 open fledger.Ledger
@@ -34,6 +35,8 @@ let ``reports missing commodities in MarketPrice directive`` () =
             @>
     | Result.Ok _ -> failwith "should not be ok"
 
+// todo 6: test that the market price is in chronological order
+
 [<Fact>]
 let ``reports missing account and commodity errors for Transaction directive``
     ()
@@ -58,6 +61,25 @@ let ``reports missing account and commodity errors for Transaction directive``
                              Line = 14L }
                            { Message = "Commodity 'GBP' not defined."
                              Line = 14L } ]
+            @>
+    | Result.Ok _ -> failwith "should not be ok"
+
+[<Fact>]
+let ``reports transaction is not in chronological order`` () =
+    let journal =
+        { Items =
+            [ 14L,
+              withTransaction () |> onDate (DateTime(2018, 1, 2)) |> Transaction
+              15L,
+              withTransaction () |> onDate (DateTime(2018, 1, 1)) |> Transaction ] }
+
+    match fillLedger journal with
+    | Result.Error errors ->
+        test
+            <@
+                errors = [ { Message =
+                               "Transaction on date 2018/01/01 is not in chronological order."
+                             Line = 15L } ]
             @>
     | Result.Ok _ -> failwith "should not be ok"
 
