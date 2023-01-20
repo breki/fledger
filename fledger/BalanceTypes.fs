@@ -111,11 +111,20 @@ let unbalancedTxCommodities (tx: Transaction) =
         tx.Postings
         |> List.map (fun p ->
             match p.TotalPrice with
-            // if the posting has total price, use its negative value
+            // if the posting has total price, use its value
             // to balance the transaction
-            | Some totalPrice -> -totalPrice
+            | Some totalPrice ->
+                if p.Amount.Value >= 0.0m then totalPrice else -totalPrice
             | None -> p.Amount)
         |> MultiCommodityBalance.FromAmounts
 
     // return only the unbalanced commodities
-    balances.Filter(fun _ amount -> amount.Value <> 0m)
+    let unbalancedCommodities =
+        balances.Filter(fun _ amount -> amount.Value <> 0m)
+
+    // if there is more than one unbalanced commodity, this means there
+    // is no pricing data and we cannot balance the transaction
+    if unbalancedCommodities.Commodities.Count > 1 then
+        MultiCommodityBalance.Empty
+    else
+        unbalancedCommodities

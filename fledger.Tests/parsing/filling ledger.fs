@@ -64,7 +64,15 @@ let ``reports missing account and commodity errors for Transaction directive``
             [ 14L,
               withTransaction ()
               |> (withPostingLine "acc1" (fun p ->
-                  p |> withTotalPrice 10m "USD" |> withExpectedBalance 20m "GBP"))
+                  p
+                  |> withAmount 0m (Some "EUR")
+                  |> withTotalPrice 0m "USD"
+                  |> withExpectedBalance 0m "GBP"))
+              |> (withPostingLine "acc1" (fun p ->
+                  p
+                  |> withAmount 0m (Some "EUR")
+                  |> withTotalPrice 0m "USD"
+                  |> withExpectedBalance 0m "GBP"))
               |> Transaction ] }
 
     match fillLedger journal with
@@ -75,9 +83,9 @@ let ``reports missing account and commodity errors for Transaction directive``
                              Line = 14L }
                            { Message = "Commodity 'EUR' not defined."
                              Line = 14L }
-                           { Message = "Commodity 'USD' not defined."
-                             Line = 14L }
                            { Message = "Commodity 'GBP' not defined."
+                             Line = 14L }
+                           { Message = "Commodity 'USD' not defined."
                              Line = 14L } ]
             @>
     | Result.Ok _ -> failwith "should not be ok"
@@ -105,19 +113,15 @@ let ``reports transaction is not in chronological order`` () =
             @>
     | Result.Ok _ -> failwith "should not be ok"
 
-// todo 9: verify unbalanced transactions are reported
-
 [<Fact>]
 let ``reports unbalanced transaction commodities`` () =
     let journal =
         { Items =
-            [ 11L, defaultCommodityDirective "USD"
-              12L, commodity "EUR"
+            [ 11L, defaultCommodityDirective "EUR"
               13L, withAccountDirective "acc1"
               14L,
               withTransaction ()
-              |> withPostingLine "acc1" (fun p ->
-                  p |> withAmount 10m (Some "EUR"))
+              |> withPostingLine "acc1" (fun p -> p |> withAmount 10m None)
               |> withPostingLine "acc1" (fun p -> p |> withAmount -5m None)
               |> Transaction ] }
 
@@ -126,10 +130,7 @@ let ``reports unbalanced transaction commodities`` () =
         test
             <@
                 errors = [ { Message =
-                               "Transaction is unbalanced for commodity: 10.00 EUR."
-                             Line = 14L }
-                           { Message =
-                               "Transaction is unbalanced for commodity: -5.00 USD."
+                               "Transaction is unbalanced for commodity: 5.00 EUR."
                              Line = 14L } ]
             @>
     | Result.Ok _ -> failwith "should not be ok"

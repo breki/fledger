@@ -196,7 +196,16 @@ type LedgerFillingState =
     member this.withDate date = { this with CurrentDate = Some date }
 
     member this.withErrors(errors) =
-        { this with Errors = this.Errors |> List.append errors }
+        // Deduplicate errors so we don't report the same one multiple times
+        // for the same transaction. Also sort them by the message so we have
+        // a deterministic order.
+        let uniqueErrors =
+            errors
+            |> Set.ofList
+            |> Set.toList
+            |> List.sortByDescending (fun e -> e.Message)
+
+        { this with Errors = this.Errors |> List.append uniqueErrors }
 
 type Ledger =
     { Accounts: Map<AccountRef, Account>

@@ -132,7 +132,6 @@ let fillLedger (journal: Journal) : Result<Ledger, LedgerError list> =
                 .withErrors errors
 
         | Transaction transaction ->
-            // todo 9: check the transaction is balanced
             let processPosting
                 (posting: PostingLine)
                 lineNumber
