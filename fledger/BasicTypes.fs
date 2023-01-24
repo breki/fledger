@@ -18,10 +18,14 @@ type AccountRef =
       NameParts: string[] }
 
     static member Create(fullName: string) =
-        let parts = fullName.Split(':')
+        match fullName with
+        | null -> nullArg "Account name is null."
+        | "" -> invalidArg "fullName" "Account name is empty."
+        | _ ->
+            let parts = fullName.Split(':')
 
-        { FullName = fullName
-          NameParts = parts }
+            { FullName = fullName
+              NameParts = parts }
 
     interface IEquatable<AccountRef> with
         member this.Equals other = other.FullName.Equals this.FullName

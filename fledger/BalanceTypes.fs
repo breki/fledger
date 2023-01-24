@@ -34,6 +34,17 @@ type MultiCommodityBalance =
 
     static member Empty = MultiCommodityBalance.FromCommodities Map.empty
 
+    static member AddAmount (amount: Amount) balance =
+        let commodity = amount.Commodity
+
+        let newBalance =
+            match balance.Commodities.TryGetValue commodity with
+            | true, balance -> balance + amount
+            | false, _ -> amount
+
+        { balance with
+            Commodities = balance.Commodities.Add(commodity, newBalance) }
+
     member this.AddCommodity commodity balance =
         let newCommodities = this.Commodities.Add(commodity, balance)
 
@@ -103,28 +114,3 @@ type BalanceHistory = List<BalanceOnDate>
 type CommodityBalanceOnDate = Date * Amount
 /// A list of single-commodity balances, one for each date.
 type CommodityBalanceHistory = List<CommodityBalanceOnDate>
-
-
-let unbalancedTxCommodities (tx: Transaction) =
-    // calculate multi-commodity balances from the tx postings
-    let balances =
-        tx.Postings
-        |> List.map (fun p ->
-            match p.TotalPrice with
-            // if the posting has total price, use its value
-            // to balance the transaction
-            | Some totalPrice ->
-                if p.Amount.Value >= 0.0m then totalPrice else -totalPrice
-            | None -> p.Amount)
-        |> MultiCommodityBalance.FromAmounts
-
-    // return only the unbalanced commodities
-    let unbalancedCommodities =
-        balances.Filter(fun _ amount -> amount.Value <> 0m)
-
-    // if there is more than one unbalanced commodity, this means there
-    // is no pricing data and we cannot balance the transaction
-    if unbalancedCommodities.Commodities.Count > 1 then
-        MultiCommodityBalance.Empty
-    else
-        unbalancedCommodities

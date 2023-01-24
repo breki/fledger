@@ -51,23 +51,40 @@ let withPostingLine account postingLineBuilder tx =
         Postings =
             tx.Postings
             @ [ { Account = AccountRef.Create account
-                  Amount = { Value = 0m; Commodity = Some "EUR" }
-                  TotalPrice = None
+                  Amount =
+                    Some
+                        { Amount = { Value = 0m; Commodity = Some "EUR" }
+                          TotalPrice = None }
                   ExpectedBalance = None }
                 |> postingLineBuilder ] }
 
-let withAmount amount commodity postingLine =
+let withAmount
+    (amount: Decimal)
+    (commodity: string option)
+    (postingLine: PostingLine)
+    : PostingLine =
     { postingLine with
         Amount =
-            { Value = amount
-              Commodity = commodity } }
-
-let withTotalPrice amount commodity postingLine =
-    { postingLine with
-        TotalPrice =
-            Some
+            { Amount =
                 { Value = amount
-                  Commodity = Some commodity } }
+                  Commodity = commodity }
+              TotalPrice = None }
+            |> Some }
+
+let withNoAmount postingLine : PostingLine = { postingLine with Amount = None }
+
+let withTotalPrice totalPriceAmount commodity (postingLine: PostingLine) =
+    match postingLine.Amount with
+    | None -> invalidOp "withTotalPrice: posting line must have an amount"
+    | Some amount ->
+        { postingLine with
+            Amount =
+                Some
+                    { amount with
+                        TotalPrice =
+                            Some
+                                { Value = totalPriceAmount
+                                  Commodity = Some commodity } } }
 
 let withExpectedBalance amount commodity postingLine =
     { postingLine with

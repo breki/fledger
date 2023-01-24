@@ -9,9 +9,7 @@ open fledger.BasicTypes
 type UserState = { Something: int }
 
 let filterOutNone items =
-    items
-    |> (List.filter Option.isSome)
-    |> List.map Option.get
+    items |> (List.filter Option.isSome) |> List.map Option.get
 
 let trimStringOptional (s: string option) =
     match s with
@@ -25,35 +23,30 @@ let trimStringOptional (s: string option) =
 let BP (p: Parser<_, _>) stream = p stream // set a breakpoint here
 
 let whitespace<'T> : Parser<string, 'T> =
-    manyChars (pchar ' ' <|> pchar '\t')
-    <??> "whitespace"
+    manyChars (pchar ' ' <|> pchar '\t') <??> "whitespace"
 
 let whitespace1<'T> : Parser<string, 'T> =
-    many1Chars (pchar ' ' <|> pchar '\t')
-    <??> "whitespace 1"
+    many1Chars (pchar ' ' <|> pchar '\t') <??> "whitespace 1"
 
 let newlineOrEof<'T> : Parser<unit, 'T> =
-    (newline |>> fun _ -> ()) <|> eof
-    <??> "newline or eof"
+    (newline |>> fun _ -> ()) <|> eof <??> "newline or eof"
 
 let endOfLineWhitespace<'T> : Parser<unit, 'T> =
-    whitespace >>. newlineOrEof >>% ()
-    <??> "end of line whitespace"
+    whitespace >>. newlineOrEof >>% () <??> "end of line whitespace"
 
-let pEmptyLine<'T> : Parser<char, 'T> =
-    whitespace >>. newline <??> "empty line"
+let pEmptyLine<'T> : Parser<char, 'T> = whitespace >>. newline <??> "empty line"
+
+let nonWhitespaceChar<'T> : Parser<char, 'T> =
+    noneOf " \t" <??> "non-whitespace"
 
 let pDatePartSeparator<'T> : Parser<char, 'T> =
     pchar '/' <|> pchar '-' <??> "date part separator"
 
-let pYear<'T> : Parser<int, 'T> =
-    pint32 .>> pDatePartSeparator <??> "year"
+let pYear<'T> : Parser<int, 'T> = pint32 .>> pDatePartSeparator <??> "year"
 
-let pMonth<'T> : Parser<int, 'T> =
-    pint32 .>> pDatePartSeparator <??> "month"
+let pMonth<'T> : Parser<int, 'T> = pint32 .>> pDatePartSeparator <??> "month"
 
-let pDay<'T> : Parser<int, 'T> =
-    pint32 <??> "day"
+let pDay<'T> : Parser<int, 'T> = pint32 <??> "day"
 
 let pDate<'T> : Parser<Date, 'T> =
     pipe3 pYear pMonth pDay (fun year month day -> DateTime(year, month, day))
@@ -61,11 +54,5 @@ let pDate<'T> : Parser<Date, 'T> =
 
 let pAccountChar<'T> : Parser<char, 'T> =
     choice
-        [ letter
-          digit
-          pchar ':'
-          pchar '-'
-          pchar '_'
-          pchar '/'
-          pchar ' ' ]
+        [ letter; digit; pchar ':'; pchar '-'; pchar '_'; pchar '/'; pchar ' ' ]
     <??> "account name character "

@@ -14,6 +14,7 @@ open FsCheck
 open FParsec
 open Xunit.Abstractions
 
+
 let chooseFromRandomJournal () =
     gen {
         let! hasEmptyLinesBetweenTxs = Arb.from<bool>.Generator
@@ -40,7 +41,6 @@ account assets:current assets:NLB
                 @"
   expenses:Business:Service charges    0.39 EUR
  expenses:Business:Employment Costs    4.25  @@ 12.20 USD
- 
   assets:current assets:Sparkasse    -4.64 EUR  = 132.55 EUR
 "
             |> ifDo hasEmptyLinesBetweenTxs (fun x ->
@@ -88,24 +88,30 @@ account assets:current assets:NLB
                 [ { Account =
                       "expenses:Business:Service charges" |> AccountRef.Create
                     Amount =
-                      { Value = 0.39m
-                        Commodity = Some "EUR" }
-                    TotalPrice = None
+                      { Amount =
+                          { Value = 0.39m
+                            Commodity = Some "EUR" }
+                        TotalPrice = None }
+                      |> Some
                     ExpectedBalance = None }
                   { Account =
                       "expenses:Business:Employment Costs" |> AccountRef.Create
-                    Amount = { Value = 4.25m; Commodity = None }
-                    TotalPrice =
-                      Some
-                          { Value = 12.2m
-                            Commodity = Some "USD" }
+                    Amount =
+                      { Amount = { Value = 4.25m; Commodity = None }
+                        TotalPrice =
+                          Some
+                              { Value = 12.2m
+                                Commodity = Some "USD" } }
+                      |> Some
                     ExpectedBalance = None }
                   { Account =
                       "assets:current assets:Sparkasse" |> AccountRef.Create
                     Amount =
-                      { Value = -4.64m
-                        Commodity = Some "EUR" }
-                    TotalPrice = None
+                      { Amount =
+                          { Value = -4.64m
+                            Commodity = Some "EUR" }
+                        TotalPrice = None }
+                      |> Some
                     ExpectedBalance =
                       Some
                           { Value = 132.55m
@@ -115,7 +121,7 @@ account assets:current assets:NLB
             List.init txCount (fun i ->
                 (12L
                  + (i |> int64)
-                   * (5L + (if hasEmptyLinesBetweenTxs then 3L else 0L)),
+                   * (4L + (if hasEmptyLinesBetweenTxs then 3L else 0L)),
                  Transaction expectedTransaction))
 
         let expectedJournal =
@@ -123,10 +129,20 @@ account assets:current assets:NLB
 
         let userState = { Something = 0 }
 
-        let result =
-            runParserOnString pJournal userState "test stream" journalString
+        let result, ex =
+            try
+                let result =
+                    runParserOnString
+                        pJournal
+                        userState
+                        "test stream"
+                        journalString
 
-        return journalString, expectedJournal, result
+                Some result, None
+            with ex ->
+                None, Some ex
+
+        return journalString, expectedJournal, result, ex
     }
 
 type JournalParsingTests(output: ITestOutputHelper) =
@@ -134,14 +150,32 @@ type JournalParsingTests(output: ITestOutputHelper) =
     member this.``parsing journal``() =
         let arbJournal = chooseFromRandomJournal () |> Arb.fromGen
 
-        let journalIsParsedCorrectly (_, expectedTransaction, parserResult) =
-            match parserResult with
-            | Success (parsedTransaction, _, _) ->
-                output.WriteLine "PARSING SUCCESS"
-                parsedTransaction = expectedTransaction
-            | Failure (errorMsg, _, _) ->
+        let journalIsParsedCorrectly
+            (
+                originalText,
+                expectedValue,
+                parserResult,
+                ex
+            ) =
+            match parserResult, ex with
+            | Some (Success (parsedValue, _, _)), _ ->
+                match parsedValue = expectedValue with
+                | true ->
+                    output.WriteLine $"PARSING SUCCESS: '{originalText}'"
+                    true
+                | false ->
+                    output.WriteLine $"PARSING WRONG:"
+                    output.WriteLine $"text: '{originalText}'"
+                    output.WriteLine $"expected: '{expectedValue}'"
+                    output.WriteLine $"parsed: '{parsedValue}'"
+                    false
+            | Some (Failure (errorMsg, _, _)), _ ->
                 output.WriteLine $"PARSING ERROR: {errorMsg}"
                 false
+            | _, Some ex ->
+                output.WriteLine $"PARSING EXCEPTION: {ex}"
+                false
+            | _, _ -> invalidOp "unexpected parser result"
 
         journalIsParsedCorrectly
         |> Prop.forAll arbJournal

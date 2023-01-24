@@ -12,48 +12,80 @@ open Xunit.Abstractions
 open fledger.BasicTypes
 open fledger.Journal
 open fledger.Parsing.ParsingTransactions
+open fledger.Tests.JournalBuilders
 
-//     assets:current assets:PayPal       110.47 CAD =1.270,99 CAD
+type PostingAmount =
+    | NoAmount
+    | Amount
+    | AmountAndTotalPrice
 
 
+// todo 9: implement a truly arbitrary posting, including the optional amount
+//   and various combinations of whitespace
 let chooseArbitraryPosting () =
     gen {
+        let! amountCase = Arb.from<PostingAmount>.Generator
+        let! hasExpectedBalance = Arb.from<bool>.Generator
+
         let mutable textBuilder =
             buildString ()
-            |> appendLine
-                "    assets:current assets:NLB          -5.37 EUR  =14698.51"
+            |> append "    assets:current assets:NLB"
+            |> ifDo (amountCase <> NoAmount) (fun x ->
+                x |> append "          -5.37 EUR")
+            |> ifDo (amountCase = AmountAndTotalPrice) (fun x ->
+                x |> append " @@ 7.35 USD")
+            |> ifDo (amountCase = NoAmount) (fun x -> x |> append " ")
+            |> ifDo hasExpectedBalance (fun x -> x |> append " =14698.51 EUR")
 
         let text = textBuilder |> toString
 
         let expectedValue =
             { Account = "assets:current assets:NLB" |> AccountRef.Create
-              Amount =
-                { Value = -5.37m
-                  Commodity = Some "EUR" }
-              TotalPrice = None
-              ExpectedBalance = Some { Value = 14698.51m; Commodity = None } }
+              Amount = None
+              ExpectedBalance = None }
+            |> ifDo (amountCase <> NoAmount) (fun p ->
+                p |> withAmount -5.37m (Some "EUR"))
+            |> ifDo (amountCase = AmountAndTotalPrice) (fun p ->
+                p |> withTotalPrice 7.35m "USD")
+            |> ifDo hasExpectedBalance (fun p ->
+                p |> withExpectedBalance 14698.51m "EUR")
             |> Some
 
-        let result =
-            runParserOnString pPostingLineActual () "test stream" text
+        let result, ex =
+            try
+                let result =
+                    runParserOnString pPostingLine () "test stream" text
 
-        return textBuilder, expectedValue, result
+                Some result, None
+            with ex ->
+                None, Some ex
+
+        return text, expectedValue, result, ex
     }
 
 type TxPostingParsingTests(output: ITestOutputHelper) =
     [<Fact>]
     member this.``parsing transaction posting``() =
-        let arbPosting =
-            chooseArbitraryPosting () |> Arb.fromGen
+        let arbPosting = chooseArbitraryPosting () |> Arb.fromGen
 
-        let transactionIsParsedCorrectly (_, expectedValue, parserResult) =
-            match parserResult with
-            | Success (parsedValue, _, _) ->
-                // output.WriteLine "PARSING SUCCESS"
+        let transactionIsParsedCorrectly
+            (
+                originalText,
+                expectedValue,
+                parserResult,
+                ex
+            ) =
+            match parserResult, ex with
+            | Some (Success (parsedValue, _, _)), _ ->
+                output.WriteLine $"PARSING SUCCESS: '{originalText}'"
                 parsedValue = expectedValue
-            | Failure (errorMsg, _, _) ->
+            | Some (Failure (errorMsg, _, _)), _ ->
                 output.WriteLine $"PARSING ERROR: {errorMsg}"
                 false
+            | _, Some ex ->
+                output.WriteLine $"PARSING EXCEPTION: {ex}"
+                false
+            | _, _ -> invalidOp "unexpected parser result"
 
         transactionIsParsedCorrectly
         |> Prop.forAll arbPosting

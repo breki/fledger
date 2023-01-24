@@ -17,10 +17,13 @@ type JournalAmount =
     { Value: Decimal
       Commodity: string option }
 
+type JournalPostingAmount =
+    { Amount: JournalAmount
+      TotalPrice: JournalAmount option }
+
 type PostingLine =
     { Account: AccountRef
-      Amount: JournalAmount
-      TotalPrice: JournalAmount option
+      Amount: JournalPostingAmount option
       ExpectedBalance: JournalAmount option }
 
 type TransactionDirective =

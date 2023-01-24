@@ -71,10 +71,7 @@ let chooseArbitraryTxFirstLine () =
                 | "*" -> TransactionStatus.Cleared
                 | _ -> TransactionStatus.Unmarked
               Description =
-                if hasDescription then
-                    Some "s.p. prispevki"
-                else
-                    None
+                if hasDescription then Some "s.p. prispevki" else None
               Payee =
                 match payeeNote with
                 | Payee -> Some "Payee"
@@ -91,8 +88,7 @@ let chooseArbitraryTxFirstLine () =
                 | Comment -> Some "this is a comment"
                 | _ -> None }
 
-        let result =
-            runParserOnString pTxFirstLine () "test stream" txString
+        let result = runParserOnString pTxFirstLine () "test stream" txString
 
         return txBuilder, expectedTxInfo, result
     }
@@ -100,8 +96,7 @@ let chooseArbitraryTxFirstLine () =
 type TxFirstLineParsingTests(output: ITestOutputHelper) =
     [<Fact>]
     member this.``parsing transaction's first line``() =
-        let arbTxInfo =
-            chooseArbitraryTxFirstLine () |> Arb.fromGen
+        let arbTxInfo = chooseArbitraryTxFirstLine () |> Arb.fromGen
 
         let transactionIsParsedCorrectly (_, expectedValue, parserResult) =
             match parserResult with

@@ -1,4 +1,4 @@
-﻿module fledger.Tests.parsing.filling_ledger
+﻿module fledger.Tests.filling_ledger.filling_ledger
 
 open System
 open fledger.Journal
@@ -9,16 +9,20 @@ open fledger.Tests.JournalBuilders
 open Swensen.Unquote
 
 
+let shouldBeOk =
+    function
+    | Result.Error errors ->
+        failwith (String.concat "," (errors |> List.map (fun x -> x.Message)))
+    | Result.Ok _ -> test <@ true @>
+
+
 [<Fact>]
 let ``automatically adds a missing commodity in DefaultCommodity directive``
     ()
     =
     let journal = { Items = [ 14L, defaultCommodityDirective "EUR" ] }
 
-    match fillLedger journal with
-    | Result.Error errors ->
-        failwith (String.concat "," (errors |> List.map (fun x -> x.Message)))
-    | Result.Ok _ -> test <@ true @>
+    fillLedger journal |> shouldBeOk
 
 
 [<Fact>]
@@ -134,3 +138,92 @@ let ``reports unbalanced transaction commodities`` () =
                              Line = 14L } ]
             @>
     | Result.Ok _ -> failwith "should not be ok"
+
+[<Fact>]
+let ``supports elided posting amounts`` () =
+    let journal =
+        { Items =
+            [ 11L, defaultCommodityDirective "EUR"
+              13L, withAccountDirective "acc1"
+              14L,
+              withTransaction ()
+              |> withPostingLine "acc1" (fun p -> p |> withAmount 10m None)
+              |> withPostingLine "acc1" (fun p -> p |> withNoAmount)
+              |> Transaction ] }
+
+    fillLedger journal |> shouldBeOk
+
+[<Fact>]
+let ``only one posting can be elided`` () =
+    let journal =
+        { Items =
+            [ 11L, defaultCommodityDirective "EUR"
+              13L, withAccountDirective "acc1"
+              14L,
+              withTransaction ()
+              |> withPostingLine "acc1" (fun p -> p |> withAmount 10m None)
+              |> withPostingLine "acc1" (fun p -> p |> withNoAmount)
+              |> withPostingLine "acc1" (fun p -> p |> withNoAmount)
+              |> Transaction ] }
+
+    match fillLedger journal with
+    | Result.Error errors ->
+        test
+            <@
+                errors = [ { Message =
+                               "Could not balance the transaction - cannot "
+                               + "have more than one posting without an amount."
+                             Line = 14L } ]
+            @>
+    | Result.Ok _ -> failwith "should not be ok"
+
+[<Fact>]
+let ``balancing a transaction takes into account total price 1`` () =
+    let journal =
+        { Items =
+            [ 11L, defaultCommodityDirective "EUR"
+              12L, commodity "USD"
+              13L, withAccountDirective "acc1"
+              14L,
+              withTransaction ()
+              |> withPostingLine "acc1" (fun p ->
+                  p |> withAmount 10m (Some "EUR"))
+              |> withPostingLine "acc1" (fun p ->
+                  p |> withAmount -8m (Some "USD") |> withTotalPrice 10m "EUR")
+              |> Transaction ] }
+
+    fillLedger journal |> shouldBeOk
+
+[<Fact>]
+let ``balancing a transaction takes into account total price 2`` () =
+    let journal =
+        { Items =
+            [ 11L, defaultCommodityDirective "EUR"
+              12L, commodity "USD"
+              13L, withAccountDirective "acc1"
+              14L,
+              withTransaction ()
+              |> withPostingLine "acc1" (fun p ->
+                  p |> withAmount -10m (Some "EUR"))
+              |> withPostingLine "acc1" (fun p ->
+                  p |> withAmount 8m (Some "USD") |> withTotalPrice 10m "EUR")
+              |> Transaction ] }
+
+    fillLedger journal |> shouldBeOk
+
+[<Fact>]
+let ``multi-commodity transaction without pricing cannot be balanced`` () =
+    let journal =
+        { Items =
+            [ 11L, defaultCommodityDirective "EUR"
+              12L, commodity "USD"
+              13L, withAccountDirective "acc1"
+              14L,
+              withTransaction ()
+              |> withPostingLine "acc1" (fun p ->
+                  p |> withAmount -10m (Some "EUR"))
+              |> withPostingLine "acc1" (fun p ->
+                  p |> withAmount 8m (Some "USD"))
+              |> Transaction ] }
+
+    fillLedger journal |> shouldBeOk
