@@ -1,6 +1,7 @@
 ﻿module fledger.LedgerTypes
 
 open System
+open System.Globalization
 open fledger.BasicTypes
 open Text
 
@@ -44,7 +45,14 @@ type Amount =
         { Value = this.Value * price.Value
           Commodity = price.Commodity }
 
-    override this.ToString() = $"%.2f{this.Value} %s{this.Commodity}"
+    override this.ToString() =
+        String.Format(
+            CultureInfo.InvariantCulture,
+            "{0:0.00} {1}",
+            this.Value,
+            this.Commodity
+        )
+
     member this.DisplayText = this.ToString()
 
 type Posting =
