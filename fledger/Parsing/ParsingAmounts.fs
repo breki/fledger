@@ -7,6 +7,7 @@ open FParsec
 
 open fledger.Journal
 open fledger.Parsing.ParsingBasics
+open fledger.Parsing.ParsingUtils
 
 // number sign = ["+" | "-"]
 let pSign<'T> : Parser<string, 'T> =
@@ -58,8 +59,10 @@ let numberLiteral2<'T> : Parser<string, 'T> =
     <??> "number"
 
 let pAmountValue<'T> : Parser<decimal, 'T> =
-    numberLiteral2
-    |>> (fun num ->
+    numberLiteral2 |> withPos
+    |>> (fun pos ->
+        let num = pos.Value
+
         match
             Decimal.TryParse(
                 num,
@@ -68,7 +71,12 @@ let pAmountValue<'T> : Parser<decimal, 'T> =
             )
         with
         | true, value -> value
-        | false, _ -> failwith $"Invalid amount value '{num}'.")
+        | false, _ ->
+            let line = pos.Start.Line
+            let column = pos.Start.Column
+
+            failwith
+                $"Invalid amount value '{num}', line {line}, column {column}.")
     <??> "amount value"
 
 let pCommodityChar = letter

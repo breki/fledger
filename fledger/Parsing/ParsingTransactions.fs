@@ -48,129 +48,101 @@ let pTxFirstLine<'T> : Parser<TransactionInfo, 'T> =
               Comment = comment }
     <??> "tx first line"
 
-/// Parses the account name in the transaction posting, when the posting does
-/// not consist of the account name only.
-let pAccountNameInPosting<'T> tillChars : Parser<AccountRef, 'T> =
-    many1CharsTill pAccountChar (pstring tillChars)
-    |>> (fun accountNameRaw ->
-        let accountName = accountNameRaw.Trim()
+type PostingValues = JournalPostingAmount option * JournalAmount option
 
-        if accountName = "" then
-            failwith "empty account name"
-        else
-            AccountRef.Create(accountName))
-    <??> "account name"
+/// Parses the transaction posting expected balance.
+let pExpectedBalance<'T> : Parser<PostingValues, 'T> =
+    whitespace >>. pAmount .>> endOfLineWhitespace
+    |>> fun expectedBalance -> None, Some expectedBalance
+    <??> "posting line values (expected balance)"
 
-/// Parses the account name in the transaction posting, when the posting
-/// consists of the account name only.
-let pAccountNameInPostingAccountOnly<'T> : Parser<AccountRef, 'T> =
-    many1Chars pAccountChar
-    |>> (fun accountNameRaw ->
-        let accountName = accountNameRaw.Trim()
+/// Parses the posting values when the only the expected balance is specified.
+let pPostingBalance<'T> : Parser<PostingValues, 'T> =
+    whitespace >>. (pstring "=") >>. pExpectedBalance
 
-        if accountName = "" then
-            failwith "empty account name"
-        else
-            AccountRef.Create(accountName))
-    <??> "account name"
-
-/// Parses the posting that contains the posting amount, total price and
-/// expected balance.
-let pPostingLineAmountPriceBalance<'T> : Parser<PostingLine, 'T> =
-    whitespace >>. pAccountNameInPosting "  " .>> whitespace .>>. pAmount
-    .>> whitespace
-    .>> (pstring "@@")
-    .>> whitespace
+/// Parses the posting values when the transaction amount, total price  and
+/// expected balance are specified.
+let pPostingAmountPriceBalance<'T> : Parser<PostingValues, 'T> =
+    whitespace >>. pAmount .>> whitespace .>> (pstring "@@") .>> whitespace
     .>>. pAmount
     .>> whitespace
     .>> (pstring "=")
     .>> whitespace
     .>>. pAmount
     .>> endOfLineWhitespace
-    |>> fun (((account, amount), totalPrice), expectedBalance) ->
-            { Account = account
-              Amount =
-                Some
-                    { Amount = amount
-                      TotalPrice = Some totalPrice }
-              ExpectedBalance = Some expectedBalance }
-    <??> "posting line (amount, total price, expected balance)"
+    |>> (fun ((amount, totalPrice), expectedBalance) ->
+        Some
+            { Amount = amount
+              TotalPrice = Some totalPrice },
+        Some expectedBalance)
+    <??> "posting line values (amount, total price, expected balance)"
 
-/// Parses the posting that contains the posting amount and total price.
-let pPostingLineAmountPrice<'T> : Parser<PostingLine, 'T> =
-    whitespace >>. pAccountNameInPosting "  " .>> whitespace .>>. pAmount
-    .>> whitespace
-    .>> (pstring "@@")
-    .>> whitespace
+/// Parses the posting values when the transaction amount and total price
+/// are specified.
+let pPostingAmountPrice<'T> : Parser<PostingValues, 'T> =
+    whitespace >>. pAmount .>> whitespace .>> (pstring "@@") .>> whitespace
     .>>. pAmount
     .>> endOfLineWhitespace
-    |>> fun ((account, amount), totalPrice) ->
-            { Account = account
-              Amount =
-                Some
-                    { Amount = amount
-                      TotalPrice = Some totalPrice }
-              ExpectedBalance = None }
-    <??> "posting line (amount, total price)"
+    |>> (fun (amount, totalPrice) ->
+        Some
+            { Amount = amount
+              TotalPrice = Some totalPrice },
+        None)
+    <??> "posting line values (amount, total price)"
 
-/// Parses the posting that contains the posting amount and
-/// expected balance.
-let pPostingLineAmountBalance<'T> : Parser<PostingLine, 'T> =
-    whitespace >>. pAccountNameInPosting "  " .>> whitespace .>>. pAmount
-    .>> whitespace
-    .>> (pstring "=")
-    .>> whitespace
+/// Parses the posting values when the transaction amount and expected balance
+/// are specified.
+let pPostingAmountBalance<'T> : Parser<PostingValues, 'T> =
+    whitespace >>. pAmount .>> whitespace .>> (pstring "=") .>> whitespace
     .>>. pAmount
     .>> endOfLineWhitespace
-    |>> fun ((account, amount), expectedBalance) ->
-            { Account = account
-              Amount = Some { Amount = amount; TotalPrice = None }
-              ExpectedBalance = Some expectedBalance }
-    <??> "posting line (amount, expected balance)"
+    |>> (fun (amount, expectedBalance) ->
+        Some { Amount = amount; TotalPrice = None }, Some expectedBalance)
+    <??> "posting line values (amount, expected balance)"
 
-/// Parses the posting that contains only the posting amount.
-let pPostingLineAmount<'T> : Parser<PostingLine, 'T> =
-    whitespace >>. pAccountNameInPosting "  " .>> whitespace .>>. pAmount
-    .>> endOfLineWhitespace
-    |>> fun (account, amount) ->
-            { Account = account
-              Amount = Some { Amount = amount; TotalPrice = None }
-              ExpectedBalance = None }
-    <??> "posting line (amount only)"
+let pPostingAmount<'T> : Parser<PostingValues, 'T> =
+    whitespace >>. pAmount .>> endOfLineWhitespace
+    |>> (fun amount -> Some { Amount = amount; TotalPrice = None }, None)
+    <??> "posting line values (amount only)"
 
-/// Parses the posting that contains only the expected balance.
-let pPostingLineBalance<'T> : Parser<PostingLine, 'T> =
-    whitespace >>. pAccountNameInPosting "  "
-    .>> whitespace
-    .>> (pstring "=")
-    .>> whitespace
-    .>>. pAmount
-    .>> endOfLineWhitespace
-    |>> fun (account, expectedBalance) ->
-            { Account = account
-              Amount = None
-              ExpectedBalance = Some expectedBalance }
-    <??> "posting line (expected balance only)"
+/// Parses the values part of the posting (except the case when the posting does
+/// not have any values or just the expected balance is specified).
+let pAmountPriceBalance<'T> : Parser<PostingValues, 'T> =
+    attempt pPostingBalance
+    <|> attempt pPostingAmountPriceBalance
+    <|> attempt pPostingAmountPrice
+    <|> attempt pPostingAmountBalance
+    <|> attempt pPostingAmount
+    <??> "posting line values"
 
-/// Parses the posting that contains only the account name.
-let pPostingLineAccountOnly<'T> : Parser<PostingLine, 'T> =
-    whitespace >>. pAccountNameInPostingAccountOnly
-    |>> fun account ->
-            { Account = account
-              Amount = None
-              ExpectedBalance = None }
-    <??> "posting line (account only)"
+/// Parses the values part of the posting (the remainder of the
+/// line after the account name).
+let pPostingValues<'T> : Parser<PostingValues, 'T> =
+    attempt (endOfLineWhitespace >>% (None, None))
+    <|> attempt ((pstring " =") >>. pExpectedBalance)
+    <|> attempt (pstring "  " >>. pAmountPriceBalance)
+    <??> "posting line (after account name)"
 
-/// Parses the posting line, by trying out different variants of postings lines.
-/// Succeeds only if one of the posting variant parsers succeeds.
-let pPostingLine<'T> : Parser<PostingLine, 'T> =
-    attempt pPostingLineBalance
-    <|> attempt pPostingLineAmountPriceBalance
-    <|> attempt pPostingLineAmountPrice
-    <|> attempt pPostingLineAmountBalance
-    <|> attempt pPostingLineAmount
-    <|> attempt pPostingLineAccountOnly
+/// Parses the transaction posting.
+let pPosting<'T> : Parser<PostingLine, 'T> =
+    whitespace1
+    >>. many1CharsTillApply
+        pAccountChar
+        pPostingValues
+        (fun accountNameRaw (amount, expectedBalance) ->
+            let accountName = accountNameRaw.Trim()
+
+            let account =
+                if accountName = "" then
+                    failwith "empty account name"
+                else
+                    AccountRef.Create(accountName)
+
+            { Account = account
+              Amount = amount
+              ExpectedBalance = expectedBalance })
     <??> "posting line"
+
 
 /// Succeeds if the end of the transaction block is found. The transaction block
 /// ends either by an empty line, a line starting with non-whitespace or if the
@@ -182,7 +154,7 @@ let pEndOfTransaction<'T> : Parser<unit, 'T> =
 
 /// Parses the posting lines of a transaction.
 let pPostingLines<'T> : Parser<PostingLine list, 'T> =
-    manyTill pPostingLine pEndOfTransaction <??> "posting lines"
+    manyTill pPosting pEndOfTransaction <??> "posting lines"
 
 /// Parses a transaction.
 let pTx<'T> : Parser<int64 * TransactionDirective, 'T> =

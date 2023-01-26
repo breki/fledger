@@ -1,6 +1,5 @@
 ﻿module fledger.``parsing tx posting``
 
-
 open System
 open Xunit
 open FsCheck
@@ -13,21 +12,46 @@ open fledger.BasicTypes
 open fledger.Journal
 open fledger.Parsing.ParsingTransactions
 
-type AmountCase =
+
+type AmountCommodityCase =
     | NoAmount
     | AmountOnly
     | AmountCommodity
 
-// todo 9: implement a truly arbitrary posting, including the optional amount
-//   and various combinations of whitespace
+type AmountValueCase =
+    | Positive
+    | Negative
+    | Zero
+    | WithoutDecimals
+    | WithDecimalPoint
+
+
+let amountStrBasedOnCase case =
+    match case with
+    | Positive -> "5.37"
+    | Negative -> "-5.37"
+    | Zero -> "0"
+    | WithoutDecimals -> "5"
+    | WithDecimalPoint -> "5."
+
 
 let renderAmountBasedOnCase prefix amount commodity case =
     match case with
     | NoAmount -> ""
-    | AmountOnly -> $"{prefix}{amount} {commodity}"
-    | AmountCommodity -> $"{amount} {commodity}"
+    | AmountOnly -> $"{prefix}{amount}"
+    | AmountCommodity -> $"{prefix}{amount} {commodity}"
 
-let constructAmountBasedOnCase amount commodity case =
+let constructAmountBasedOnCase valueCase commodity case =
+    let amountValueBasedOnCase case =
+        match case with
+        | Positive -> 5.37m
+        | Negative -> -5.37m
+        | Zero -> 0m
+        | WithoutDecimals -> 5m
+        | WithDecimalPoint -> 5.0m
+
+    let amount = amountValueBasedOnCase valueCase
+
     match case with
     | NoAmount -> None
     | AmountOnly -> Some { Value = amount; Commodity = None }
@@ -38,21 +62,42 @@ let constructAmountBasedOnCase amount commodity case =
 
 let chooseArbitraryPosting () =
     gen {
-        let! amountCase = Arb.from<AmountCase>.Generator
-        let! totalPriceCase = Arb.from<AmountCase>.Generator
-        let! expectedBalanceCase = Arb.from<AmountCase>.Generator
+        let! amountCommodityCase = Arb.from<AmountCommodityCase>.Generator
+        let! amountValueCase = Arb.from<AmountValueCase>.Generator
+        let! extraWhitespaceBeforeAmount = Arb.from<bool>.Generator
+        let! extraWhitespaceBetweenAmountAndCommodity = Arb.from<bool>.Generator
+        let! totalPriceCase = Arb.from<AmountCommodityCase>.Generator
+        let! totalPriceValueCase = Arb.from<AmountValueCase>.Generator
+        let! expectedBalanceCase = Arb.from<AmountCommodityCase>.Generator
+        let! expectedBalanceValueCase = Arb.from<AmountValueCase>.Generator
+        let! extraWhitespaceBeforeEquals = Arb.from<bool>.Generator
+        let! extraWhitespaceAfterEquals = Arb.from<bool>.Generator
+        let! extraWhitespaceAtPostingEnd = Arb.from<bool>.Generator
 
         // construct the text of the posting line that needs to be parsed
         let text =
             buildString ()
             |> append "    assets:current assets:NLB"
-            |> (append (renderAmountBasedOnCase "  " -5.37m "EUR" amountCase))
+            |> (append (
+                renderAmountBasedOnCase
+                    (if extraWhitespaceBeforeAmount then "     " else "  ")
+                    (amountStrBasedOnCase amountValueCase)
+                    (if extraWhitespaceBetweenAmountAndCommodity then
+                         "  EUR"
+                     else
+                         "EUR")
+                    amountCommodityCase
+            ))
 
         let text =
-            if amountCase <> NoAmount then
+            if amountCommodityCase <> NoAmount then
                 text
                 |> (append (
-                    renderAmountBasedOnCase " @@ " 7.35m "USD" totalPriceCase
+                    renderAmountBasedOnCase
+                        " @@ "
+                        (amountStrBasedOnCase totalPriceValueCase)
+                        "USD"
+                        totalPriceCase
                 ))
             else
                 text
@@ -60,8 +105,15 @@ let chooseArbitraryPosting () =
         let text =
             text
             |> (append (
-                renderAmountBasedOnCase " =" 14698.51m "EUR" expectedBalanceCase
+                renderAmountBasedOnCase
+                    ((if extraWhitespaceBeforeEquals then "   " else "")
+                     + " ="
+                     + (if extraWhitespaceAfterEquals then "   " else ""))
+                    (amountStrBasedOnCase expectedBalanceValueCase)
+                    "EUR"
+                    expectedBalanceCase
             ))
+            |> ifDo extraWhitespaceAtPostingEnd (append "   ")
 
         let text = text |> toString
 
@@ -72,19 +124,19 @@ let chooseArbitraryPosting () =
               ExpectedBalance = None }
 
         let expectedValue =
-            if amountCase <> NoAmount then
+            if amountCommodityCase <> NoAmount then
                 { expectedValue with
                     Amount =
                         Some
                             { Amount =
                                 (constructAmountBasedOnCase
-                                    -5.37m
+                                    amountValueCase
                                     "EUR"
-                                    amountCase)
+                                    amountCommodityCase)
                                 |> Option.get
                               TotalPrice =
                                 (constructAmountBasedOnCase
-                                    7.35m
+                                    totalPriceValueCase
                                     "USD"
                                     totalPriceCase) } }
             else
@@ -94,14 +146,13 @@ let chooseArbitraryPosting () =
             { expectedValue with
                 ExpectedBalance =
                     constructAmountBasedOnCase
-                        14698.51m
+                        expectedBalanceValueCase
                         "EUR"
                         expectedBalanceCase }
 
         let result, ex =
             try
-                let result =
-                    runParserOnString pPostingLine () "test stream" text
+                let result = runParserOnString pPosting () "test stream" text
 
                 Some result, None
             with ex ->
