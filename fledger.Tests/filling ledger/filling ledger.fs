@@ -40,6 +40,23 @@ let ``reports missing commodities in MarketPrice directive`` () =
             @>
     | Result.Ok _ -> failwith "should not be ok"
 
+// todo 10: validate there are no duplicate accounts
+[<Fact(Skip = "todo")>]
+let ``reports duplicate account declarations`` () =
+    let journal =
+        { Items =
+            [ 12L, withAccountDirective "acc1"
+              13L, withAccountDirective "acc1" ] }
+
+    match fillLedger journal with
+    | Result.Error errors ->
+        test
+            <@
+                errors = [ { Message = "Duplicate 'acc1' account declaration."
+                             Line = 12L } ]
+            @>
+    | Result.Ok _ -> failwith "should not be ok"
+
 [<Fact>]
 let ``reports market price not in chronological order`` () =
     let journal =
