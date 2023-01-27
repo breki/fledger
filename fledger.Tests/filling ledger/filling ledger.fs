@@ -40,8 +40,7 @@ let ``reports missing commodities in MarketPrice directive`` () =
             @>
     | Result.Ok _ -> failwith "should not be ok"
 
-// todo 10: validate there are no duplicate accounts
-[<Fact(Skip = "todo")>]
+[<Fact>]
 let ``reports duplicate account declarations`` () =
     let journal =
         { Items =
@@ -53,7 +52,7 @@ let ``reports duplicate account declarations`` () =
         test
             <@
                 errors = [ { Message = "Duplicate 'acc1' account declaration."
-                             Line = 12L } ]
+                             Line = 13L } ]
             @>
     | Result.Ok _ -> failwith "should not be ok"
 

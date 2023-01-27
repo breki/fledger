@@ -264,14 +264,23 @@ let fillLedger (journal: Journal) : Result<Ledger, LedgerError list> =
         (lineNumber, journalItem)
         =
         match journalItem with
-        // todo 10: validate there are no duplicate accounts
-        | Account account ->
-            { state with
-                Accounts =
-                    state.Accounts.Add(
-                        account.Account,
-                        { Name = account.Account }
-                    ) }
+        | Account accountDirective ->
+            let accountRef = accountDirective.Account
+
+            // validate there are no duplicate accounts
+            match state.Accounts.TryFind accountRef with
+            | Some _ ->
+                let errors =
+                    [ { Message =
+                          $"Duplicate '%s{accountRef.FullName}' "
+                          + "account declaration."
+                        Line = lineNumber } ]
+
+                state.withErrors errors
+            | None ->
+                { state with
+                    Accounts =
+                        state.Accounts.Add(accountRef, { Name = accountRef }) }
         | Comment _ -> state
         | Commodity commodity ->
             { state with Commodities = state.Commodities.Add commodity }
