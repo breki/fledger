@@ -4,6 +4,33 @@ open fledger.BalanceTypes
 open fledger.BasicTypes
 open fledger.Journal
 open fledger.LedgerTypes
+open fledger.AccountingFuncs
+
+
+/// The state of the ledger while filling it from a journal.
+type LedgerFillingState =
+    { Commodities: Set<Commodity>
+      DefaultCommodity: string option
+      MarketPrices: MarketPrices
+      Accounts: Map<AccountRef, Account>
+      AccountsBalances: AccountsBalances
+      Transactions: Transaction list
+      CurrentDate: Date option
+      Errors: LedgerError list }
+
+    member this.withDate date = { this with CurrentDate = Some date }
+
+    member this.withErrors(errors) =
+        // Deduplicate errors so we don't report the same one multiple times
+        // for the same transaction. Also sort them by the message so we have
+        // a deterministic order.
+        let uniqueErrors =
+            errors
+            |> Set.ofList
+            |> Set.toList
+            |> List.sortByDescending (fun e -> e.Message)
+
+        { this with Errors = this.Errors |> List.append uniqueErrors }
 
 /// Verifies that the specified account is registered and adds an error
 /// if it is not.
@@ -252,12 +279,18 @@ let processTransactionDirective
           Comment = transaction.Info.Comment
           Postings = postings }
 
+    let accountsBalances =
+        updateAccountsBalancesWithTransaction state.AccountsBalances ledgerTx
 
-    ({ state with Transactions = ledgerTx :: state.Transactions }
+    ({ state with
+        Transactions = ledgerTx :: state.Transactions
+        AccountsBalances = accountsBalances }
         .withDate txDate)
         .withErrors errors
 
 
+// todo 10: keep accounts balances while filling the ledger so we can later assert
+//  expected balances
 let fillLedger (journal: Journal) : Result<Ledger, LedgerError list> =
     let processJournalItem
         (state: LedgerFillingState)
@@ -334,6 +367,7 @@ let fillLedger (journal: Journal) : Result<Ledger, LedgerError list> =
           DefaultCommodity = None
           MarketPrices = { Prices = Map.empty }
           Accounts = Map.empty
+          AccountsBalances = AccountsBalances.Empty
           Transactions = []
           CurrentDate = None
           Errors = [] }

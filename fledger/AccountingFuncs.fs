@@ -4,8 +4,8 @@ open fledger.BalanceTypes
 open fledger.BasicTypes
 open fledger.LedgerTypes
 
-/// Returns the balances of all the accounts.
-let accountsBalances (ledger: Ledger) =
+/// Applies a transaction to the accounts balances and returns the new balances.
+let updateAccountsBalancesWithTransaction balances (transaction: Transaction) =
     let processPosting
         (balances: AccountsBalances)
         (posting: Posting)
@@ -37,12 +37,15 @@ let accountsBalances (ledger: Ledger) =
         { balances with
             Balances = balances.Balances |> Map.add account newAccountBalance }
 
-    let processTx balances (transaction: Transaction) =
-        transaction.Postings |> List.fold processPosting balances
+    transaction.Postings |> List.fold processPosting balances
 
+
+/// Returns the balances of all the accounts.
+let accountsBalances (ledger: Ledger) =
     let initialState = { Balances = Map.empty }
 
-    ledger.Transactions |> List.fold processTx initialState
+    ledger.Transactions
+    |> List.fold updateAccountsBalancesWithTransaction initialState
 
 /// Adds an amount to the balance-by-date structure.
 let addAmountToBalance

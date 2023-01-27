@@ -192,29 +192,7 @@ let sortMarketPrices (prices: MarketPrices) : MarketPrices =
 /// An error encountered while filling the ledger from a journal.
 type LedgerError = { Message: string; Line: int64 }
 
-type LedgerFillingState =
-    { Commodities: Set<Commodity>
-      DefaultCommodity: string option
-      MarketPrices: MarketPrices
-      Accounts: Map<AccountRef, Account>
-      Transactions: Transaction list
-      CurrentDate: Date option
-      Errors: LedgerError list }
-
-    member this.withDate date = { this with CurrentDate = Some date }
-
-    member this.withErrors(errors) =
-        // Deduplicate errors so we don't report the same one multiple times
-        // for the same transaction. Also sort them by the message so we have
-        // a deterministic order.
-        let uniqueErrors =
-            errors
-            |> Set.ofList
-            |> Set.toList
-            |> List.sortByDescending (fun e -> e.Message)
-
-        { this with Errors = this.Errors |> List.append uniqueErrors }
-
+/// The final, filled ledger.
 type Ledger =
     { Accounts: Map<AccountRef, Account>
       Transactions: Transaction list

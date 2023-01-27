@@ -95,12 +95,16 @@ let convertToSingleCommodity
       Commodity = toCommodity }
 
 
+/// Represents a balance for a specific account.
 type AccountBalance =
     { Account: AccountRef
       Balance: MultiCommodityBalance }
 
+/// Represents a dictionary of accounts and their balances.
 type AccountsBalances =
     { Balances: Map<AccountRef, AccountBalance> }
+
+    static member Empty = { Balances = Map.empty }
 
 /// Represents a map of multi-commodity balances, indexed by the date.
 type BalanceByDate = Map<Date, MultiCommodityBalance>

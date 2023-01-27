@@ -30,8 +30,8 @@
       <Compile Include="Parsing\ParsingJournal.fs" />
       <Compile Include="LedgerTypes.fs" />
       <Compile Include="BalanceTypes.fs" />
-      <Compile Include="LedgerFilling.fs" />
       <Compile Include="AccountingFuncs.fs" />
+      <Compile Include="LedgerFilling.fs" />
       <Compile Include="ValidationFuncs.fs" />
     </ItemGroup>
 
