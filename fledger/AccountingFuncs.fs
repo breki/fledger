@@ -4,12 +4,20 @@ open fledger.BalanceTypes
 open fledger.BasicTypes
 open fledger.LedgerTypes
 
+// todo 10: the function should also assert the balances vs the expected ones
+//  and return any errors
+
+// type LedgerError = { Message: string; Line: int64 }
+
 /// Applies a transaction to the accounts balances and returns the new balances.
-let updateAccountsBalancesWithTransaction balances (transaction: Transaction) =
+let updateAccountsBalancesWithTransaction
+    (balances, errors)
+    (transaction: Transaction)
+    =
     let processPosting
-        (balances: AccountsBalances)
+        (balances, errors)
         (posting: Posting)
-        : AccountsBalances =
+        : AccountsBalances * LedgerError list =
         let account = posting.Account
         let amount = posting.Amount
         let commodity = amount.Commodity
@@ -35,17 +43,21 @@ let updateAccountsBalancesWithTransaction balances (transaction: Transaction) =
                         newCommodityBalance }
 
         { balances with
-            Balances = balances.Balances |> Map.add account newAccountBalance }
+            Balances = balances.Balances |> Map.add account newAccountBalance },
+        errors
 
-    transaction.Postings |> List.fold processPosting balances
+    transaction.Postings |> List.fold processPosting (balances, errors)
 
 
 /// Returns the balances of all the accounts.
 let accountsBalances (ledger: Ledger) =
-    let initialState = { Balances = Map.empty }
+    let initialState = { Balances = Map.empty }, []
 
-    ledger.Transactions
-    |> List.fold updateAccountsBalancesWithTransaction initialState
+    let balances, errors =
+        ledger.Transactions
+        |> List.fold updateAccountsBalancesWithTransaction initialState
+
+    balances
 
 /// Adds an amount to the balance-by-date structure.
 let addAmountToBalance

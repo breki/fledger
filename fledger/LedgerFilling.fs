@@ -108,6 +108,8 @@ let toLedgerAmount
               Line = lineNumber }
             :: errorsSoFar
 
+// todo 15: validator: the expected account totals should be validated
+
 
 /// Adds the specified journal transaction to the ledger. Reports any errors
 /// encountered.
@@ -279,8 +281,10 @@ let processTransactionDirective
           Comment = transaction.Info.Comment
           Postings = postings }
 
-    let accountsBalances =
-        updateAccountsBalancesWithTransaction state.AccountsBalances ledgerTx
+    let accountsBalances, errors =
+        updateAccountsBalancesWithTransaction
+            (state.AccountsBalances, errors)
+            ledgerTx
 
     ({ state with
         Transactions = ledgerTx :: state.Transactions
@@ -289,8 +293,6 @@ let processTransactionDirective
         .withErrors errors
 
 
-// todo 10: keep accounts balances while filling the ledger so we can later assert
-//  expected balances
 let fillLedger (journal: Journal) : Result<Ledger, LedgerError list> =
     let processJournalItem
         (state: LedgerFillingState)
