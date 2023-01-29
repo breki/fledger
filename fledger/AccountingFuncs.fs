@@ -16,7 +16,7 @@ let updateAccountsBalancesWithTransaction
         : AccountsBalances * LedgerError list =
         let account = posting.Account
         let amount = posting.Amount
-        let commodity = amount.Commodity
+        let amountCommodity = amount.Commodity
 
         let accountBalance =
             balances.Balances
@@ -27,25 +27,25 @@ let updateAccountsBalancesWithTransaction
 
         let newCommodityBalance =
             accountBalance.Balance.Commodities
-            |> Map.tryFind commodity
-            |> Option.defaultValue (commodity |> Amount.Zero)
+            |> Map.tryFind amountCommodity
+            |> Option.defaultValue (amountCommodity |> Amount.Zero)
             |> (+) amount
 
         let newAccountBalance =
             { accountBalance with
                 Balance =
                     accountBalance.Balance.AddCommodity
-                        commodity
+                        amountCommodity
                         newCommodityBalance }
-
-        // todo 5: if the posting has an expected balance, compare it to the actual
-        // balance for the specified commodity
 
         let errors =
             match posting.ExpectedBalance with
             | Some expectedBalance ->
+                let expectedBalanceCommodity = expectedBalance.Commodity
+
                 match
-                    newAccountBalance.Balance.Commodities.TryFind commodity
+                    newAccountBalance.Balance.Commodities.TryFind
+                        expectedBalanceCommodity
                 with
                 | Some actualBalance ->
                     // todo 6: expose helper function for this error

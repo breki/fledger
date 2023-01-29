@@ -108,8 +108,6 @@ let toLedgerAmount
               Line = lineNumber }
             :: errorsSoFar
 
-// todo 15: validator: the expected account totals should be validated
-
 
 /// Adds the specified journal transaction to the ledger. Reports any errors
 /// encountered.

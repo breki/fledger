@@ -106,11 +106,6 @@ let ``reports missing account and commodity errors for Transaction directive``
                            { Message = "Commodity 'GBP' not defined."
                              Line = 14L }
                            { Message = "Commodity 'USD' not defined."
-                             Line = 14L }
-                           { Message =
-                               "Expected balance for account 'acc1' "
-                               + "is 0.00 GBP, but the actual balance "
-                               + "is 0.00 EUR"
                              Line = 14L } ]
             @>
     | Result.Ok _ -> failwith "should not be ok"
