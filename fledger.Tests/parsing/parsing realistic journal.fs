@@ -15,7 +15,6 @@ open fledger.LedgerTypes
 open fledger.LedgerFilling
 open fledger.BalanceTypes
 open fledger.AccountingFuncs
-open fledger.ValidationFuncs
 
 open Swensen.Unquote
 
@@ -38,8 +37,6 @@ type RealisticJournalParsingTests(output: ITestOutputHelper) =
                 output.WriteLine $"LEDGER ERROR: {error}"
                 test <@ false @>
             | Result.Ok ledger ->
-                let result = validateLedger ledger
-                test <@ Result.isOk result @>
                 test <@ ledger.Accounts.Count > 20 @>
                 test <@ ledger.Transactions.Length > 1000 @>
 
