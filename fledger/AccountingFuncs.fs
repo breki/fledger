@@ -10,6 +10,26 @@ let updateAccountsBalancesWithTransaction
     (balances, errors)
     (transaction: Transaction)
     =
+    let reportErrorIfBalanceIsNotAsExpected
+        account
+        expectedBalance
+        actualBalance
+        errors
+        =
+        if expectedBalance <> actualBalance then
+            let error =
+                { Message =
+                    "Expected balance for account "
+                    + $"'%s{account.FullName}' is "
+                    + $"%A{expectedBalance}, but the actual "
+                    + $"balance is %A{actualBalance}"
+                  Line = transaction.Line }
+
+            error :: errors
+        else
+            errors
+
+
     let processPosting
         (balances, errors)
         (posting: Posting)
@@ -43,39 +63,20 @@ let updateAccountsBalancesWithTransaction
             | Some expectedBalance ->
                 let expectedBalanceCommodity = expectedBalance.Commodity
 
-                match
-                    newAccountBalance.Balance.Commodities.TryFind
-                        expectedBalanceCommodity
-                with
-                | Some actualBalance ->
-                    // todo 6: expose helper function for this error
-                    if expectedBalance <> actualBalance then
-                        let error =
-                            { Message =
-                                "Expected balance for account "
-                                + $"'%s{account.FullName}' is "
-                                + $"%A{expectedBalance}, but the actual "
-                                + $"balance is %A{actualBalance}"
-                              Line = transaction.Line }
+                let actualBalance =
+                    match
+                        newAccountBalance.Balance.Commodities.TryFind
+                            expectedBalanceCommodity
+                    with
+                    | Some actualBalance -> actualBalance
+                    | None -> Amount.Zero expectedBalance.Commodity
 
-                        error :: errors
-                    else
-                        errors
-                | None ->
-                    let actualBalance = Amount.Zero expectedBalance.Commodity
+                reportErrorIfBalanceIsNotAsExpected
+                    account
+                    expectedBalance
+                    actualBalance
+                    errors
 
-                    if expectedBalance <> actualBalance then
-                        let error =
-                            { Message =
-                                "Expected balance for account "
-                                + $"'%s{account.FullName}' is "
-                                + $"%A{expectedBalance}, but the actual "
-                                + $"balance is %A{actualBalance}"
-                              Line = transaction.Line }
-
-                        error :: errors
-                    else
-                        errors
             | None -> errors
 
         { balances with
