@@ -41,6 +41,8 @@ type Amount =
         { Value = amount.Value / (decimal divisor)
           Commodity = amount.Commodity }
 
+    member this.IsZero = this.Value = 0.0M
+
     member this.Convert(price: Amount) : Amount =
         { Value = this.Value * price.Value
           Commodity = price.Commodity }
@@ -79,7 +81,8 @@ type Transaction =
       Payee: string option
       Note: string option
       Comment: string option
-      Postings: Posting list }
+      Postings: Posting list
+      Line: int64 }
 
     member this.DateStr = this.Date |> dateToStr
 

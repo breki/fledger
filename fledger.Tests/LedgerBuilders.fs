@@ -12,7 +12,8 @@ let withTransaction () =
       Payee = None
       Note = None
       Comment = None
-      Postings = [] }
+      Postings = []
+      Line = 0 }
 
 let onDate date (tx: Transaction) = { tx with Date = date }
 let withDescription desc (tx: Transaction) = { tx with Description = Some desc }

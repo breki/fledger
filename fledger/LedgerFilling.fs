@@ -210,6 +210,9 @@ let processTransactionDirective
         |> List.filter (fun posting -> posting.Amount.IsSome)
         |> List.fold foldPosting ([], MultiCommodityBalance.Empty, [])
 
+    // reverse the postings to preserve the original order
+    let postingsWithAmounts = postingsWithAmounts |> List.rev
+
     // check if there are any postings with elided amounts
     let generatedPostings, commodityBalances, errors =
         match
@@ -279,7 +282,8 @@ let processTransactionDirective
           Payee = transaction.Info.Payee
           Note = transaction.Info.Note
           Comment = transaction.Info.Comment
-          Postings = postings }
+          Postings = postings
+          Line = lineNumber }
 
     let accountsBalances, errors =
         updateAccountsBalancesWithTransaction

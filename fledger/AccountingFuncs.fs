@@ -4,12 +4,8 @@ open fledger.BalanceTypes
 open fledger.BasicTypes
 open fledger.LedgerTypes
 
-// todo 10: the function should also assert the balances vs the expected ones
-//  and return any errors
-
-// type LedgerError = { Message: string; Line: int64 }
-
-/// Applies a transaction to the accounts balances and returns the new balances.
+/// Applies a transaction to the accounts balances and returns the new balances and also any
+/// errors indicating the expected balances assertion have failed.
 let updateAccountsBalancesWithTransaction
     (balances, errors)
     (transaction: Transaction)
@@ -42,6 +38,46 @@ let updateAccountsBalancesWithTransaction
                         commodity
                         newCommodityBalance }
 
+        // todo 5: if the posting has an expected balance, compare it to the actual
+        // balance for the specified commodity
+
+        let errors =
+            match posting.ExpectedBalance with
+            | Some expectedBalance ->
+                match
+                    newAccountBalance.Balance.Commodities.TryFind commodity
+                with
+                | Some actualBalance ->
+                    // todo 6: expose helper function for this error
+                    if expectedBalance <> actualBalance then
+                        let error =
+                            { Message =
+                                "Expected balance for account "
+                                + $"'%s{account.FullName}' is "
+                                + $"%A{expectedBalance}, but the actual "
+                                + $"balance is %A{actualBalance}"
+                              Line = transaction.Line }
+
+                        error :: errors
+                    else
+                        errors
+                | None ->
+                    let actualBalance = Amount.Zero expectedBalance.Commodity
+
+                    if expectedBalance <> actualBalance then
+                        let error =
+                            { Message =
+                                "Expected balance for account "
+                                + $"'%s{account.FullName}' is "
+                                + $"%A{expectedBalance}, but the actual "
+                                + $"balance is %A{actualBalance}"
+                              Line = transaction.Line }
+
+                        error :: errors
+                    else
+                        errors
+            | None -> errors
+
         { balances with
             Balances = balances.Balances |> Map.add account newAccountBalance },
         errors
@@ -53,7 +89,7 @@ let updateAccountsBalancesWithTransaction
 let accountsBalances (ledger: Ledger) =
     let initialState = { Balances = Map.empty }, []
 
-    let balances, errors =
+    let balances, _ =
         ledger.Transactions
         |> List.fold updateAccountsBalancesWithTransaction initialState
 

@@ -106,6 +106,11 @@ let ``reports missing account and commodity errors for Transaction directive``
                            { Message = "Commodity 'GBP' not defined."
                              Line = 14L }
                            { Message = "Commodity 'USD' not defined."
+                             Line = 14L }
+                           { Message =
+                               "Expected balance for account 'acc1' "
+                               + "is 0.00 GBP, but the actual balance "
+                               + "is 0.00 EUR"
                              Line = 14L } ]
             @>
     | Result.Ok _ -> failwith "should not be ok"
@@ -154,6 +159,34 @@ let ``reports unbalanced transaction commodities`` () =
                              Line = 14L } ]
             @>
     | Result.Ok _ -> failwith "should not be ok"
+
+[<Fact>]
+let ``postings' order is the same as in the journal`` () =
+    let journal =
+        { Items =
+            [ 11L, defaultCommodityDirective "EUR"
+              13L, withAccountDirective "acc1"
+              14L, withAccountDirective "acc2"
+              15L,
+              withTransaction ()
+              |> withPostingLine "acc1" (fun p -> p |> withAmount 10m None)
+              |> withPostingLine "acc2" (fun p -> p |> withNoAmount)
+              |> Transaction ] }
+
+    let fillLedgerResult = fillLedger journal
+
+    fillLedgerResult |> shouldBeOk
+
+    match fillLedgerResult with
+    | Result.Ok ledger ->
+        let tx = ledger.Transactions |> Seq.head
+
+        test
+            <@
+                tx.Postings |> List.map (fun p -> p.Account.FullName) = [ "acc1"
+                                                                          "acc2" ]
+            @>
+    | Result.Error _ -> failwith "should not be error"
 
 [<Fact>]
 let ``supports elided posting amounts`` () =
