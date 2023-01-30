@@ -11,9 +11,36 @@ open Swensen.Unquote
 
 let shouldBeOk =
     function
+    | Result.Ok _ -> test <@ true @>
     | Result.Error errors ->
         failwith (String.concat "," (errors |> List.map (fun x -> x.Message)))
-    | Result.Ok _ -> test <@ true @>
+
+
+[<Fact>]
+let ``records entries`` () =
+    let journal =
+        { Items =
+            [ 11L, defaultCommodityDirective "EUR"
+              12L, commodity "EUR"
+              13L, withAccountDirective "acc1"
+              14L,
+              withTransaction ()
+              |> withPostingLine "acc1" (fun p -> p |> withAmount 10m None)
+              |> withPostingLine "acc1" (fun p -> p |> withNoAmount)
+              |> fledger.Journal.Transaction ] }
+
+    match fillLedger journal with
+    | Result.Ok ledger ->
+        test
+            <@
+                ledger.Entries |> List.map (fun x -> x.Line) = [ 11L
+                                                                 12L
+                                                                 13L
+                                                                 14L ]
+            @>
+
+    | Result.Error errors ->
+        failwith (String.concat "," (errors |> List.map (fun x -> x.Message)))
 
 
 [<Fact>]

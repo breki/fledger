@@ -51,4 +51,4 @@ let withLedger (accounts: Account list) (transactions: Transaction list) =
     { Accounts = accountsMap
       Transactions = transactions
       MarketPrices = { Prices = Map.empty }
-      Items = [] }
+      Entries = [] }

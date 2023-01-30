@@ -195,19 +195,19 @@ let sortMarketPrices (prices: MarketPrices) : MarketPrices =
 /// An error encountered while filling the ledger from a journal.
 type LedgerError = { Message: string; Line: int64 }
 
-// todo 8: define ledger items as a discriminated union
 type LedgerItem =
     | Account of Account
-    // todo 9: add support for keeping comment items in ledger
-    //| Comment of Comment
-    // todo 10: add support for keeping DefaultCommodity items in ledger
-    //| DefaultCommodity of DefaultCommodity
+    | Comment of string
+    | Commodity of Commodity
+    | DefaultCommodity of Amount
     | MarketPrice of MarketPrice
     | Transaction of Transaction
+
+type LedgerEntry = { Item: LedgerItem; Line: int64 }
 
 /// The final, filled ledger.
 type Ledger =
     { Accounts: Map<AccountRef, Account>
       Transactions: Transaction list
       MarketPrices: MarketPrices
-      Items: LedgerItem list }
+      Entries: LedgerEntry list }

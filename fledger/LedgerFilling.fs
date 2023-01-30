@@ -16,11 +16,13 @@ type LedgerFillingState =
       AccountsBalances: AccountsBalances
       Transactions: Transaction list
       CurrentDate: Date option
+      Entries: LedgerEntry list
       Errors: LedgerError list }
 
-    member this.withDate date = { this with CurrentDate = Some date }
+    static member withDate date (state: LedgerFillingState) =
+        { state with CurrentDate = Some date }
 
-    member this.withErrors(errors) =
+    static member withErrors errors (state: LedgerFillingState) =
         // Deduplicate errors so we don't report the same one multiple times
         // for the same transaction. Also sort them by the message so we have
         // a deterministic order.
@@ -30,7 +32,10 @@ type LedgerFillingState =
             |> Set.toList
             |> List.sortByDescending (fun e -> e.Message)
 
-        { this with Errors = this.Errors |> List.append uniqueErrors }
+        { state with Errors = state.Errors |> List.append uniqueErrors }
+
+    static member withEntry entry (state: LedgerFillingState) =
+        { state with Entries = entry :: state.Entries }
 
 /// Verifies that the specified account is registered and adds an error
 /// if it is not.
@@ -283,16 +288,21 @@ let processTransactionDirective
           Postings = postings
           Line = lineNumber }
 
+    let entry =
+        { Item = Transaction ledgerTx
+          Line = lineNumber }
+
     let accountsBalances, errors =
         updateAccountsBalancesWithTransaction
             (state.AccountsBalances, errors)
             ledgerTx
 
-    ({ state with
+    { state with
         Transactions = ledgerTx :: state.Transactions
         AccountsBalances = accountsBalances }
-        .withDate txDate)
-        .withErrors errors
+    |> LedgerFillingState.withEntry entry
+    |> LedgerFillingState.withDate txDate
+    |> LedgerFillingState.withErrors errors
 
 
 let fillLedger (journal: Journal) : Result<Ledger, LedgerError list> =
@@ -313,15 +323,29 @@ let fillLedger (journal: Journal) : Result<Ledger, LedgerError list> =
                           + "account declaration."
                         Line = lineNumber } ]
 
-                state.withErrors errors
+                state |> LedgerFillingState.withErrors errors
             | None ->
-                { state with
-                    Accounts =
-                        state.Accounts.Add(accountRef, { Name = accountRef }) }
-        | Comment _ -> state
-        | Commodity commodity ->
+                let account = { Name = accountRef }
+
+                let entry =
+                    { Item = Account account
+                      Line = lineNumber }
+
+                { state with Accounts = state.Accounts.Add(accountRef, account) }
+                |> LedgerFillingState.withEntry entry
+        | Journal.Comment comment ->
+            state
+            |> LedgerFillingState.withEntry
+                { Item = Comment comment
+                  Line = lineNumber }
+        | Journal.Commodity commodity ->
+            let entry =
+                { Item = Commodity commodity
+                  Line = lineNumber }
+
             { state with Commodities = state.Commodities.Add commodity }
-        | DefaultCommodity defaultCommodity ->
+            |> LedgerFillingState.withEntry entry
+        | Journal.DefaultCommodity defaultCommodity ->
             match defaultCommodity.Commodity with
             | Some commodity ->
                 if state.Commodities.Contains commodity then
@@ -332,6 +356,12 @@ let fillLedger (journal: Journal) : Result<Ledger, LedgerError list> =
                     { state with
                         Commodities = state.Commodities.Add commodity
                         DefaultCommodity = defaultCommodity.Commodity }
+                |> LedgerFillingState.withEntry
+                    { Item =
+                        DefaultCommodity
+                            { Value = defaultCommodity.Value
+                              Commodity = commodity }
+                      Line = lineNumber }
             | None -> invalidOp "No default commodity"
         | Journal.MarketPrice marketPrice ->
             let errors =
@@ -353,15 +383,20 @@ let fillLedger (journal: Journal) : Result<Ledger, LedgerError list> =
                     lineNumber
                     errors
 
-            ({ state with
-                MarketPrices =
-                    state.MarketPrices
-                    |> addMarketPrice
-                        { Date = marketPrice.Date
-                          Commodity = marketPrice.Commodity
-                          Price = price } }
-                .withDate marketPrice.Date)
-                .withErrors errors
+            let marketPrice =
+                { Date = marketPrice.Date
+                  Commodity = marketPrice.Commodity
+                  Price = price }
+
+            let entry =
+                { Item = MarketPrice marketPrice
+                  Line = lineNumber }
+
+            { state with
+                MarketPrices = state.MarketPrices |> addMarketPrice marketPrice }
+            |> LedgerFillingState.withEntry entry
+            |> LedgerFillingState.withDate marketPrice.Date
+            |> LedgerFillingState.withErrors errors
 
         | Journal.Transaction transaction ->
             processTransactionDirective transaction lineNumber state
@@ -374,6 +409,7 @@ let fillLedger (journal: Journal) : Result<Ledger, LedgerError list> =
           AccountsBalances = AccountsBalances.Empty
           Transactions = []
           CurrentDate = None
+          Entries = []
           Errors = [] }
 
     let finalState = journal.Items |> List.fold processJournalItem initialState
@@ -383,6 +419,6 @@ let fillLedger (journal: Journal) : Result<Ledger, LedgerError list> =
             { Transactions = finalState.Transactions |> List.rev
               Accounts = finalState.Accounts
               MarketPrices = finalState.MarketPrices |> sortMarketPrices
-              Items = [] }
+              Entries = finalState.Entries |> List.rev }
     else
         Error finalState.Errors |> Result.mapError List.rev
