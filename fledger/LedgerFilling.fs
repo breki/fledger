@@ -301,7 +301,7 @@ let fillLedger (journal: Journal) : Result<Ledger, LedgerError list> =
         (lineNumber, journalItem)
         =
         match journalItem with
-        | Account accountDirective ->
+        | Journal.Account accountDirective ->
             let accountRef = accountDirective.Account
 
             // validate there are no duplicate accounts
@@ -333,7 +333,7 @@ let fillLedger (journal: Journal) : Result<Ledger, LedgerError list> =
                         Commodities = state.Commodities.Add commodity
                         DefaultCommodity = defaultCommodity.Commodity }
             | None -> invalidOp "No default commodity"
-        | MarketPrice marketPrice ->
+        | Journal.MarketPrice marketPrice ->
             let errors =
                 if state.Commodities.Contains marketPrice.Commodity then
                     []
@@ -363,7 +363,7 @@ let fillLedger (journal: Journal) : Result<Ledger, LedgerError list> =
                 .withDate marketPrice.Date)
                 .withErrors errors
 
-        | Transaction transaction ->
+        | Journal.Transaction transaction ->
             processTransactionDirective transaction lineNumber state
 
     let initialState: LedgerFillingState =
@@ -382,6 +382,7 @@ let fillLedger (journal: Journal) : Result<Ledger, LedgerError list> =
         Ok
             { Transactions = finalState.Transactions |> List.rev
               Accounts = finalState.Accounts
-              MarketPrices = finalState.MarketPrices |> sortMarketPrices }
+              MarketPrices = finalState.MarketPrices |> sortMarketPrices
+              Items = [] }
     else
         Error finalState.Errors |> Result.mapError List.rev

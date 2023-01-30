@@ -93,7 +93,7 @@ let ``reports missing account and commodity errors for Transaction directive``
                   |> withAmount 0m (Some "EUR")
                   |> withTotalPrice 0m "USD"
                   |> withExpectedBalance 0m "GBP"))
-              |> Transaction ] }
+              |> fledger.Journal.Transaction ] }
 
     match fillLedger journal with
     | Result.Error errors ->
@@ -117,11 +117,11 @@ let ``reports transaction is not in chronological order`` () =
             [ 14L,
               withTransaction ()
               |> txOnDate (DateTime(2018, 1, 2))
-              |> Transaction
+              |> fledger.Journal.Transaction
               15L,
               withTransaction ()
               |> txOnDate (DateTime(2018, 1, 1))
-              |> Transaction ] }
+              |> fledger.Journal.Transaction ] }
 
     match fillLedger journal with
     | Result.Error errors ->
@@ -143,7 +143,7 @@ let ``reports unbalanced transaction commodities`` () =
               withTransaction ()
               |> withPostingLine "acc1" (fun p -> p |> withAmount 10m None)
               |> withPostingLine "acc1" (fun p -> p |> withAmount -5m None)
-              |> Transaction ] }
+              |> fledger.Journal.Transaction ] }
 
     match fillLedger journal with
     | Result.Error errors ->
@@ -166,7 +166,7 @@ let ``postings' order is the same as in the journal`` () =
               withTransaction ()
               |> withPostingLine "acc1" (fun p -> p |> withAmount 10m None)
               |> withPostingLine "acc2" (fun p -> p |> withNoAmount)
-              |> Transaction ] }
+              |> fledger.Journal.Transaction ] }
 
     let fillLedgerResult = fillLedger journal
 
@@ -193,7 +193,7 @@ let ``supports elided posting amounts`` () =
               withTransaction ()
               |> withPostingLine "acc1" (fun p -> p |> withAmount 10m None)
               |> withPostingLine "acc1" (fun p -> p |> withNoAmount)
-              |> Transaction ] }
+              |> fledger.Journal.Transaction ] }
 
     fillLedger journal |> shouldBeOk
 
@@ -208,7 +208,7 @@ let ``only one posting can be elided`` () =
               |> withPostingLine "acc1" (fun p -> p |> withAmount 10m None)
               |> withPostingLine "acc1" (fun p -> p |> withNoAmount)
               |> withPostingLine "acc1" (fun p -> p |> withNoAmount)
-              |> Transaction ] }
+              |> fledger.Journal.Transaction ] }
 
     match fillLedger journal with
     | Result.Error errors ->
@@ -234,7 +234,7 @@ let ``balancing a transaction takes into account total price 1`` () =
                   p |> withAmount 10m (Some "EUR"))
               |> withPostingLine "acc1" (fun p ->
                   p |> withAmount -8m (Some "USD") |> withTotalPrice 10m "EUR")
-              |> Transaction ] }
+              |> fledger.Journal.Transaction ] }
 
     fillLedger journal |> shouldBeOk
 
@@ -251,7 +251,7 @@ let ``balancing a transaction takes into account total price 2`` () =
                   p |> withAmount -10m (Some "EUR"))
               |> withPostingLine "acc1" (fun p ->
                   p |> withAmount 8m (Some "USD") |> withTotalPrice 10m "EUR")
-              |> Transaction ] }
+              |> fledger.Journal.Transaction ] }
 
     fillLedger journal |> shouldBeOk
 
@@ -268,6 +268,6 @@ let ``multi-commodity transaction without pricing cannot be balanced`` () =
                   p |> withAmount -10m (Some "EUR"))
               |> withPostingLine "acc1" (fun p ->
                   p |> withAmount 8m (Some "USD"))
-              |> Transaction ] }
+              |> fledger.Journal.Transaction ] }
 
     fillLedger journal |> shouldBeOk

@@ -32,6 +32,7 @@
       <Compile Include="BalanceTypes.fs" />
       <Compile Include="AccountingFuncs.fs" />
       <Compile Include="LedgerFilling.fs" />
+      <Folder Include="Writing" />
     </ItemGroup>
 
     <ItemGroup>
