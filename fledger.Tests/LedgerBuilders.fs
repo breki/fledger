@@ -13,7 +13,7 @@ let withTransaction () =
       Note = None
       Comment = None
       Postings = []
-      Line = 0 }
+      Line = 1L }
 
 let onDate date (tx: Transaction) = { tx with Date = date }
 let withDescription desc (tx: Transaction) = { tx with Description = Some desc }

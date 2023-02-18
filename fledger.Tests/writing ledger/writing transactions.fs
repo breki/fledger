@@ -4,10 +4,14 @@ open System
 open System.IO
 open Xunit
 open FsCheck
+open FParsec
 
 open Xunit.Abstractions
 open fledger.LedgerTypes
 open fledger.Tests.LedgerBuilders
+open fledger.Parsing.ParsingBasics
+open fledger.Parsing.ParsingJournal
+open fledger.LedgerFilling
 
 // todo 5: implement parsing of the resulting text and compare
 //   the parsed transaction with the original one
@@ -17,47 +21,94 @@ open fledger.Tests.LedgerBuilders
 //   - which posting(s) are elided?
 //   - right-alignment of the posting amounts
 //   - do not output .00 decimals if all amounts are rounded
+// todo 10: document
 
 let writeTransaction (tx: Transaction) (writer: TextWriter) =
     writer.WriteLine(tx.ToString())
+
+let writeTransactionToString tx =
+    let stream = new MemoryStream()
+    let writer = new StreamWriter(stream)
+
+    writer |> writeTransaction tx
+    writer.Flush()
+
+    stream.Seek(0L, SeekOrigin.Begin) |> ignore
+
+    let reader = new StreamReader(stream)
+    reader.ReadToEnd()
+
 
 let chooseArbitraryTransaction () =
     gen {
         let tx = withTransaction () |> onDate (DateTime(2023, 02, 17))
 
-        let stream = new MemoryStream()
-        let writer = new StreamWriter(stream)
+        let txText = writeTransactionToString tx
 
-        let tx = withTransaction () |> onDate (DateTime(2023, 02, 17))
+        // todo 1: add the commodity, default commodity and accounts lines
+        // to the journal string
+        let journalText = txText
 
-        writer |> writeTransaction tx
-        writer.Flush()
+        // parse the transaction as a journal
+        let journalParserResult =
+            runParserOnString
+                pJournal
+                { Something = 0 }
+                "test stream"
+                journalText
 
-        stream.Seek(0L, SeekOrigin.Begin) |> ignore
+        return
+            match journalParserResult with
+            | Success (journal, _, _) ->
+                match fillLedger journal with
+                | Result.Ok ledger ->
+                    // extract the transaction from the ledger
+                    let parsedTx = ledger.Transactions.Head
 
-        let reader = new StreamReader(stream)
-        let value = reader.ReadToEnd()
+                    if parsedTx = tx then
+                        tx, Some parsedTx, txText, None
+                    else
+                        tx,
+                        Some parsedTx,
+                        txText,
+                        (Some
+                            "Parsed transaction is not equal to the original one")
 
-        let expectedValue =
-            @"2023/02/17 
+                | Result.Error errors ->
+                    let ledgerFillingErrors =
+                        (String.concat
+                            ","
+                            (errors |> List.map (fun x -> x.Message)))
 
-"
-
-        return tx, value, expectedValue
+                    tx, None, txText, (Some ledgerFillingErrors)
+            | Failure (errorMsg, _, _) -> tx, None, txText, (Some errorMsg)
     }
 
 
 type TxWritingTests(output: ITestOutputHelper) =
     [<Fact>]
-    member this.``icebreaker``() =
+    member this.``transaction writing properties``() =
         let arbTransaction = chooseArbitraryTransaction () |> Arb.fromGen
 
-        let transactionIsWrittenCorrectly (tx, value: string, expectedValue) =
-            if value = expectedValue then
-                true
-            else
-                output.WriteLine("Expected: {0}", expectedValue)
-                output.WriteLine("Actual: {0}", value)
+        let transactionIsWrittenCorrectly
+            (
+                originalTx: Transaction,
+                parsedTx: Transaction option,
+                txString: string,
+                errors
+            ) =
+            match errors with
+            | None -> true
+            | Some errorMsg ->
+                output.WriteLine $"Original transaction: {originalTx}"
+
+                match parsedTx with
+                | Some parsedTx ->
+                    output.WriteLine $"Parsed transaction: {parsedTx}"
+                | None -> ()
+
+                output.WriteLine $"Transaction string: {txString}"
+                output.WriteLine $"ERROR: {errorMsg}"
                 false
 
         transactionIsWrittenCorrectly

@@ -20,10 +20,10 @@
         <Compile Include="parsing\ParsingUtils.fs" />
         <Compile Include="parsing\parsing account directive.fs" />
         <Compile Include="parsing\parsing amounts.fs" />
-        <Compile Include="parsing\parsing journal.fs" />
-        <Compile Include="parsing\parsing realistic journal.fs" />
         <Compile Include="parsing\parsing tx first line.fs" />
         <Compile Include="parsing\parsing tx posting.fs" />
+        <Compile Include="parsing\parsing journal.fs" />
+        <Compile Include="parsing\parsing realistic journal.fs" />
         <Compile Include="accounting functions\full dates balance history.fs" />
         <Compile Include="accounting functions\balance history moving averages.fs" />
         <Compile Include="accounting functions\multi-commodity balance.fs" />
