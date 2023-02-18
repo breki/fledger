@@ -404,7 +404,7 @@ let fillLedger (journal: Journal) : Result<Ledger, LedgerError list> =
     let initialState: LedgerFillingState =
         { Commodities = Set.empty
           DefaultCommodity = None
-          MarketPrices = { Prices = Map.empty }
+          MarketPrices = MarketPrices.Empty
           Accounts = Map.empty
           AccountsBalances = AccountsBalances.Empty
           Transactions = []

@@ -121,6 +121,8 @@ type MarketPrice =
 type MarketPrices =
     { Prices: Map<Commodity, Map<Commodity, List<Date * Amount>>> }
 
+    static member Empty = { Prices = Map.empty }
+
     member this.Convert
         (amount: Amount)
         (commodity2: Commodity)

@@ -29,6 +29,7 @@
         <Compile Include="accounting functions\multi-commodity balance.fs" />
         <Compile Include="Todo.fs" />
         <Compile Include="filling ledger\filling ledger.fs" />
+        <Compile Include="writing ledger\writing transactions.fs" />
     </ItemGroup>
 
     <ItemGroup>

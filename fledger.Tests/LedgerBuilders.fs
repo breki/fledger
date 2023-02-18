@@ -43,12 +43,35 @@ let withTotalPrice amount commodity posting =
                 { Value = amount
                   Commodity = commodity } }
 
+let withLedger (entries: LedgerEntry list) =
+    let accounts =
+        entries
+        |> List.choose (fun e ->
+            match e.Item with
+            | Account acc -> Some acc
+            | _ -> None)
 
-let withLedger (accounts: Account list) (transactions: Transaction list) =
+    let marketPrices =
+        entries
+        |> List.choose (fun e ->
+            match e.Item with
+            | MarketPrice mp -> Some mp
+            | _ -> None)
+        |> List.fold
+            (fun prices price -> prices |> addMarketPrice price)
+            MarketPrices.Empty
+
+    let transactions =
+        entries
+        |> List.choose (fun e ->
+            match e.Item with
+            | Transaction tx -> Some tx
+            | _ -> None)
+
     // convert account list to a map, with account names as keys
     let accountsMap = accounts |> List.map (fun a -> a.Name, a) |> Map.ofList
 
     { Accounts = accountsMap
       Transactions = transactions
-      MarketPrices = { Prices = Map.empty }
-      Entries = [] }
+      MarketPrices = marketPrices
+      Entries = entries }
