@@ -15,9 +15,13 @@ open fledger.Parsing.ParsingAccountDirective
 
 let chooseArbitraryAccountDirective () =
     gen {
+        let! whitespaceAfterAccountName = Arb.from<bool>.Generator
+
         let mutable textBuilder =
             buildString ()
-            |> appendLine "account assets:current assets:Revolut/test"
+            |> append "account assets:current assets:Revolut/test"
+            |> ifDo whitespaceAfterAccountName (append "   ")
+            |> appendLine ""
             |> appendLine ""
             |> appendLine "  note  (type: BANK)  "
             |> appendLine " note  (type: BANK)"

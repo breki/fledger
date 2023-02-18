@@ -9,7 +9,8 @@ open fledger.Parsing.ParsingBasics
 open fledger.Parsing.ParsingUtils
 
 let pAccountNameInDirective<'T> : Parser<AccountRef, 'T> =
-    many1CharsTill pAccountChar newlineOrEof |>> AccountRef.Create
+    many1CharsTill pAccountChar newlineOrEof
+    |>> (fun accountName -> AccountRef.Create(accountName.Trim()))
     <??> "account name"
 
 let pAccountSubdirective<'T> : Parser<AccountName option, 'T> =

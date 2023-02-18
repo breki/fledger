@@ -15,6 +15,8 @@ let withTransaction () =
       Postings = []
       Line = 1L }
 
+let txOnLine line (tx: Transaction) = { tx with Line = line }
+
 let onDate date (tx: Transaction) = { tx with Date = date }
 let withDescription desc (tx: Transaction) = { tx with Description = Some desc }
 

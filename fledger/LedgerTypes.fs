@@ -91,7 +91,11 @@ type Transaction =
         |> ifDo this.Description.IsSome (fun x ->
             x |> append this.Description.Value)
         |> ifDo this.Payee.IsSome (fun x -> x |> append ("|" + this.Payee.Value))
-        |> ifDo this.Note.IsSome (fun x -> x |> append ("|" + this.Note.Value))
+        |> ifDo this.Note.IsSome (fun x ->
+            let separator = if this.Payee.IsSome then "|" else "||"
+            x |> append (separator + this.Note.Value))
+        |> ifDo this.Comment.IsSome (fun x ->
+            x |> append ("; " + this.Comment.Value))
         |> toString
 
     override this.ToString() =
@@ -99,8 +103,6 @@ type Transaction =
         |> append this.DateStr
         |> append " "
         |> append this.FullDescription
-        |> ifDo this.Comment.IsSome (fun x ->
-            x |> append ("; " + this.Comment.Value))
         |> newLine
         |> append (
             this.Postings
