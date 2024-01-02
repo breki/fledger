@@ -1,5 +1,11 @@
 ﻿module fledger.Tests.Todo
 
+// todo 0: prepare a build script
+
+// todo 1: write README.md
+
+// todo 2: add a diary document
+
 // todo 20: implement a journal writer and test it by rereading it and
 // comparing it with the original
 

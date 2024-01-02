@@ -9,6 +9,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Files", "Solution 
 		tcr.bat = tcr.bat
 		brainstorming ideas.md = brainstorming ideas.md
 		.gitignore = .gitignore
+		README.md = README.md
+		LICENSE = LICENSE
+		fledger.tool.ps1 = fledger.tool.ps1
+		Run-Build.ps1 = Run-Build.ps1
 	EndProjectSection
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "fledger.tool", "fledger.tool\fledger.tool.fsproj", "{6DE9F563-8759-4CC2-BA97-736DA21D9EF2}"
