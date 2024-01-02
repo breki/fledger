@@ -73,12 +73,18 @@ function BuildSolution()
 
 function Test()
 {
+    # note that the coverage collecting is commented out because the latest 
+    # dotcover command does not recognize the "test" command for some reason
+    
     Log "Running tests..."
-    dotnet dotcover test --configuration $Configuration `
-        "--dcOutput=$BuildDir\fledger-coverage-report.dcvr" --no-build --nologo
+#    dotnet dotcover test --configuration $Configuration `
+#        "--dcOutput=$BuildDir\fledger-coverage-report.dcvr" --no-build --nologo
+    
+    dotnet test --configuration $Configuration --no-build --nologo
+    
     FailOnError
-    dotnet dotcover report dotcover-report-config.xml
-    FailOnError
+#    dotnet dotcover report dotcover-report-config.xml
+#    FailOnError
 }
 
 function CompileBinariesFinal()
@@ -112,10 +118,7 @@ function ZipDeploymentPackage()
 
 function CreateDeploymentPackage()
 {
-    PrepareSqlScripts
     CopyBinariesToPackageArea
-    CopyConfigurationFilesToPackageArea
-    BuildDocumentation
     ZipDeploymentPackage
 }
 

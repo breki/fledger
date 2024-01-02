@@ -7,6 +7,12 @@
       "commands": [
         "fantomas"
       ]
+    },
+    "jetbrains.dotcover.commandlinetools": {
+      "version": "2023.3.2",
+      "commands": [
+        "dotnet-dotCover"
+      ]
     }
   }
 }

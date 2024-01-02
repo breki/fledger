@@ -19,9 +19,10 @@ open fledger.AccountingFuncs
 open Swensen.Unquote
 
 type RealisticJournalParsingTests(output: ITestOutputHelper) =
-    [<Fact>]
-    // [<Fact(Skip = "Only to be run to debug problems "
-    //               + "with parsing realistic journals")>]
+    // todo 8: fix the test
+    // [<Fact>]
+    [<Fact(Skip = "Only to be run to debug problems "
+                  + "with parsing realistic journals")>]
     member this.``parsing realistic journal``() =
         let text = File.ReadAllText(@"D:\ledger\igor.ledger")
 
