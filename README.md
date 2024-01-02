@@ -4,7 +4,8 @@ Various tools for hledger, written in F#.
 
 ## How to build
 
-```asm
-dotnet build
+```powershell
+.\Run-Build.ps1
 ```
 
+It also runs tests and packages the `fledger.tool` binaries into the `Build` directory.

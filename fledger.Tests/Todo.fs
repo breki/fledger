@@ -1,10 +1,10 @@
 ﻿module fledger.Tests.Todo
 
-// todo 0: prepare a build script
+// todo 0: add a diary document
 
 // todo 1: write README.md
 
-// todo 2: add a diary document
+// todo 2: migrate to .NET 8
 
 // todo 20: implement a journal writer and test it by rereading it and
 // comparing it with the original
