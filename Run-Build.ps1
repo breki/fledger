@@ -103,7 +103,7 @@ function CopyBinariesToPackageArea()
     New-Item $BuildPackageBinDir -ItemType directory | Out-Null
     FailOnError
 
-    Copy-Item -Path fledger.tool\bin\$Configuration\net6.0\win-x64\* `
+    Copy-Item -Path fledger.tool\bin\$Configuration\net8.0\win-x64\* `
 	  -Destination $BuildPackageBinDir -Recurse -Force
     FailOnError
 }

@@ -60,7 +60,7 @@ type AmountsParsingTests(output: ITestOutputHelper) =
     [<InlineData("123.45    EUR", "123.45", "EUR")>]
     [<InlineData("123.    EUR", "123.", "EUR")>]
     [<InlineData(".95    EUR", "0.95", "EUR")>]
-    member this.``parsing amounts`` text expectedValue expectedCommodity =
+    member this.``parsing amounts`` text (expectedValue: string) expectedCommodity =
         let expectedValue =
             { Value = Decimal.Parse(expectedValue, CultureInfo.InvariantCulture)
               Commodity =

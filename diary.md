@@ -1,5 +1,9 @@
 # fledger Development Diary
 
+## 2024-01-03
+
+Migrated to .NET 8.
+
 ## 2024-01-02
 
 Got back to the project after a very long time. I've added this diary to keep
